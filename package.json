@@ -19,7 +19,6 @@
         "@perp/contract": "1.0.4",
         "@types/dateformat": "^3.0.1",
         "async-mutex": "0.2.6",
-        "big-ts": "^0.1.0",
         "big.js": "5.2.2",
         "buffer-crc32": "^0.2.13",
         "cli-table": "^0.3.6",
