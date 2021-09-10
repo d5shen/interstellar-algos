@@ -1,34 +1,41 @@
-import * as PerpUtils from "./eth/perp/PerpUtils"
-import { Amm } from "../types/ethers"
+import * as PerpUtils from "../eth/perp/PerpUtils"
+import { Amm } from "../../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
-import { Log } from "./Log"
-import { NonceService } from "./amm/AmmUtils"
-import { PerpService } from "./eth/perp/PerpService"
-import { Side } from "./Constants"
-import { TradeRecord } from "./Order"
-import { Wallet } from "ethers"
+import { BIG_ZERO, Side } from "../Constants"
+import { Log } from "../Log"
+import { Wallet } from "@ethersproject/wallet"
 import Big from "big.js"
+import { NonceService } from "../amm/AmmUtils"
+import { PerpService } from "../eth/perp/PerpService"
 
-export class OrderManager {
+export class Order {
+    private readonly log = Log.getLogger(Order.name)
+    private id: string
+    private amm: Amm
+    private pair: string
+    private direction: Side
+    private quantity: Big // should this be in notional or contracts?
+    private filled: Big = BIG_ZERO
+    private status: any // should be an enum PENDING, INFLIGHT, CANCELED, COMPLETED?
+    private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
 
-    // TODO:
-    //   manage orders lol
-    //   watch out for block reorgs...?
+    constructor(readonly perpService: PerpService, amm: Amm, pair: string, direction: Side, quantity: Big) {
+      this.amm = amm
+      this.pair = pair
+      this.direction = direction
+      this.quantity = quantity
+    }
 
-    private readonly log = Log.getLogger(OrderManager.name)
-    private readonly nonceService: NonceService
-    private readonly perpService: PerpService
-    private readonly wallet: Wallet
-    
+    //TODO:
+    //  ?
     /********************************************
      **  Trading functions
-     ********************************************/
-
-    private async openPerpFiPosition(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big,
-                                     side: Side, details: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+    ********************************************/
+    private async sendChildOrder(wallet: Wallet, amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+        const nonceService = NonceService.get(wallet)
         const amount = quoteAssetAmount.div(leverage)
         this.log.jinfo({event: "TRADE:OpenPerpFiPosition:NonceMutex:Wait", details: details})
-        const release = await this.nonceService.mutex.acquire()
+        const release = await nonceService.mutex.acquire()
         this.log.jinfo({event: "TRADE:OpenPerpFiPosition:NonceMutex:Acquired", details: details})
         let tx
         try {
@@ -39,18 +46,18 @@ export class OrderManager {
             }
             // send tx to trade
             tx = await this.perpService.openPosition(
-                this.wallet,
+                wallet,
                 amm.address,
                 side,
                 amount,
                 leverage,
                 baseAssetAmountLimit,
                 {
-                    nonce: this.nonceService.get(),
+                    nonce: nonceService.get(),
                     gasPrice: safeGasPrice,
                 },
             )
-            this.nonceService.increment()
+            nonceService.increment()
         } catch(e) {
             if (details) {
                 details.ppState = "FAILED"
@@ -64,7 +71,7 @@ export class OrderManager {
                     details: details
                 }
             })
-            await this.nonceService.unlockedSync()
+            await nonceService.unlockedSync()
             throw e
         } finally {
             release()
@@ -95,9 +102,9 @@ export class OrderManager {
             // const event = txReceipt.events.filter((event: any) => event.event === "PositionChanged")[0]
             // const positionChangedLog = PerpUtils.toPositionChangedLog(event.args)
             const txReceipt = await this.perpService.ethService.waitForTransaction(tx.hash, 90000, `${Side[side]}:TRADE:OpenPerpFiPosition:TxnReceipt:TIMEOUT:90s`)
-            const eventArgs = await this.perpService.getEventArgs(this.wallet, tx, txReceipt, 'PositionChanged')
+            const eventArgs = await this.perpService.getEventArgs(wallet, tx, txReceipt, 'PositionChanged')
             if (!eventArgs) {
-               throw Error("transaction failed: " + JSON.stringify({transactionHash: tx.hash, transaction: tx, receipt: txReceipt}))
+              throw Error("transaction failed: " + JSON.stringify({transactionHash: tx.hash, transaction: tx, receipt: txReceipt}))
             }
             const positionChangedLog = PerpUtils.argsToPositionChangedLog(eventArgs)
             if (details) {
@@ -136,5 +143,48 @@ export class OrderManager {
             })
             throw e
         }
+    }
+}
+
+const tradeLogger = Log.getLogger("Trade")
+export class TradeRecord {
+    tradeId: string | null = null
+    state: string = "PENDING"
+    pair: string | null = null
+    side: Side | null = null
+    // info at decision time
+    timestamp: number | null = null
+    size: Big = BIG_ZERO // quantity contracts
+    notional: Big = BIG_ZERO
+    price: Big | null = null
+    // amm blockchain txn info
+    ppState: string = "UNINIT"
+    ppSentTimestamp: number | null = null // time when creating tx
+    ppAckTimestamp: number | null = null // time when tx received by blockchain
+    ppFillTimestamp: number | null = null // time when tx confirmed
+    ppGasPx: Big = BIG_ZERO
+    ppBaseAssetAmountLimit: Big | null = null
+    ppExecSize: Big = BIG_ZERO
+    ppExecPx: Big | null = null
+    ppMaxSlip: Big = BIG_ZERO
+    ppTxHash: string | null = null
+    ppTxBlockNumber: number | null = null
+    ppTxGasLimit: Big | null = null
+    ppTxGasUsed: Big = BIG_ZERO
+    ppTxStatus: number | undefined = undefined // false if txn reverted, true if successful
+    ppPositionChangedLog: PerpUtils.PositionChangedLog | null = null
+
+    constructor(obj: Partial<TradeRecord>) {
+        Object.assign(this, obj)
+    }
+
+    onSuccess(): void {
+        this.state = "PASSED"
+        tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Passed] ` + JSON.stringify(this))
+    }
+
+    onFail(): void {
+        this.state = "FAILED"
+        tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Failed] ` + JSON.stringify(this))
     }
 }

@@ -46,10 +46,18 @@ export class GasService {
 }
 
 export class NonceService {
+    private static instances: Map<Wallet, NonceService>
+    public static get(wallet: Wallet): NonceService {
+        if (!NonceService.instances.has(wallet)) {
+            NonceService.instances.set(wallet, new NonceService(wallet))
+        }
+        return NonceService.instances.get(wallet)
+    }
+
     private nextNonce: number
     private wallet: Wallet
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
-    constructor(wallet: Wallet) {
+    private constructor(wallet: Wallet) {
         this.nextNonce = 0
         this.wallet = wallet
     }

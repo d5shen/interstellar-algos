@@ -75,7 +75,7 @@ export class AlgoExecution {
     this.erc20Service = new ERC20Service(this.ethService, this.ethServiceRO)
 
     this.gasService = new GasService(this.ethServiceRO)
-    this.nonceService = new NonceService(this.walletRO)
+    this.nonceService = NonceService.get(this.walletRO)
 
     fs.watchFile(configPath, (curr, prev) => this.configChanged(curr, prev))
   }
