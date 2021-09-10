@@ -1,4 +1,3 @@
-import { Log } from "./Log"
 import { ServerProfile } from "./ServerProfile"
 import { Service } from "typedi"
 import fetch from "node-fetch"

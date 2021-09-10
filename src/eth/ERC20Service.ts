@@ -4,9 +4,9 @@ import ERC20TokenArtifact from "@perp/contract/build/contracts/ERC20Token.json"
 import Big from "big.js"
 import { ethers, Wallet } from "ethers"
 import { Service } from "typedi"
-import { ERC20Token } from "../types/ethers/ERC20Token"
+import { ERC20Token } from "../../types/ethers/ERC20Token"
 import { EthService, EthServiceRO } from "./EthService"
-import { Log } from "./Log"
+import { Log } from "../Log"
 
 @Service()
 export class ERC20Service {

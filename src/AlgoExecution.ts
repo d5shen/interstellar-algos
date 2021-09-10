@@ -1,22 +1,22 @@
 import "./init"
 import * as AmmUtils from "./amm/AmmUtils"
-import * as PerpUtils from "./PerpUtils" 
+import * as PerpUtils from "./eth/perp/PerpUtils" 
 import * as fs from "fs"
 import { pollFrequency, configPath, slowPollFrequency, statsPath } from "./configs"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
 import { StatsKeys } from "./amm/AmmStats"
-import { BIG_1BIO, BIG_ONE, BIG_ZERO } from "./Constants"
+import { BIG_ZERO } from "./Constants"
 import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
-import { ERC20Service } from "./ERC20Service"
-import { EthMetadata, SystemMetadataFactory } from "./SystemMetadataFactory"
-import { EthService, EthServiceRO } from "./EthService"
+import { ERC20Service } from "./eth/ERC20Service"
+import { EthMetadata, SystemMetadataFactory } from "./eth/SystemMetadataFactory"
+import { EthService, EthServiceRO } from "./eth/EthService"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
-import { PerpService } from "./PerpService"
-import { PositionService } from "./PositionService"
+import { PerpService } from "./eth/perp/PerpService"
+import { PerpPositionService } from "./eth/perp/PerpPositionService"
 import { preflightCheck } from "./configs"
-import { ServerProfile } from "./ServerProfile"
+import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Wallet } from "ethers"
 import Big from "big.js"
@@ -49,7 +49,7 @@ export class AlgoExecution {
     protected readonly erc20Service: ERC20Service
     protected readonly nonceService: NonceService
     protected readonly gasService: GasService
-    protected readonly positionService: PositionService
+    protected readonly positionService: PerpPositionService
 
     protected readonly serverProfile: ServerProfile = new ServerProfile()
     protected readonly systemMetadataFactory: SystemMetadataFactory
@@ -335,7 +335,6 @@ export class AlgoExecution {
                     price: ammProps.price,
                 },
             })
-            //ammProps.price = newSpotPrice
         }
     }
 

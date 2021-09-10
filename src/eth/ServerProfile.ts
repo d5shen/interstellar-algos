@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Service } from "typedi"
-import { Log } from "./Log"
+import { Log } from "../Log"
 
 @Service()
 export class ServerProfile {

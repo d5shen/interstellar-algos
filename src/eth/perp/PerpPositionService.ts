@@ -1,11 +1,11 @@
 import { PerpService, PnlCalcOption, Position } from "./PerpService"
 import { Service } from "typedi"
-import { Log } from "./Log"
+import { Log } from "../../Log"
 import Big from "big.js"
 
 @Service()
-export class PositionService {
-    private readonly log = Log.getLogger(PositionService.name)
+export class PerpPositionService {
+    private readonly log = Log.getLogger(PerpPositionService.name)
 
     constructor(
         readonly wallet: string,
