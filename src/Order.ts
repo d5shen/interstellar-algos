@@ -1,6 +1,6 @@
 import Big from "big.js"
 import { Amm } from "../types/ethers"
-import { Side } from "./Constants"
+import { BIG_ZERO, Side } from "./Constants"
 
 export class Order {
     private id: string
@@ -8,6 +8,8 @@ export class Order {
     private pair: string
     private direction: Side
     private quantity: Big // should this be in notional or contracts?
+    private filled: Big = BIG_ZERO
+    private status: any // should be an enum PENDING, INFLIGHT, CANCELED, COMPLETED?
 
     constructor(amm: Amm, pair: string, direction: Side, quantity: Big) {
         this.amm = amm
@@ -15,4 +17,7 @@ export class Order {
         this.direction = direction
         this.quantity = quantity
     }
+
+    //TODO: 
+    //  ?
 }
