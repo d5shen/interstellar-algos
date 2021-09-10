@@ -10,14 +10,14 @@ export const BIG_ONE = Big(1)
 export const BIG_TWO = Big(2)
 export const BIG_THREE = Big(3)
 export const BIG_FOUR = Big(4)
-export const BIG_10 = Big(10) 
+export const BIG_10 = Big(10)
 export const BIG_20 = Big(20)
-export const BIG_100 = Big(100) 
+export const BIG_100 = Big(100)
 export const BIG_1K = Big(1000)
 export const BIG_10K = Big(10000)
 export const BIG_1BIO = Big(1000000000)
 
 export enum Side {
-    BUY,
-    SELL,
+  BUY,
+  SELL,
 }
