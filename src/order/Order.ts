@@ -20,23 +20,23 @@ export class Order {
     private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
 
     constructor(readonly perpService: PerpService, amm: Amm, pair: string, direction: Side, quantity: Big) {
-      this.amm = amm
-      this.pair = pair
-      this.direction = direction
-      this.quantity = quantity
+        this.amm = amm
+        this.pair = pair
+        this.direction = direction
+        this.quantity = quantity
     }
 
     //TODO:
     //  ?
     /********************************************
      **  Trading functions
-    ********************************************/
+     ********************************************/
     private async sendChildOrder(wallet: Wallet, amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
         const nonceService = NonceService.get(wallet)
         const amount = quoteAssetAmount.div(leverage)
-        this.log.jinfo({event: "TRADE:OpenPerpFiPosition:NonceMutex:Wait", details: details})
+        this.log.jinfo({ event: "TRADE:OpenPerpFiPosition:NonceMutex:Wait", details: details })
         const release = await nonceService.mutex.acquire()
-        this.log.jinfo({event: "TRADE:OpenPerpFiPosition:NonceMutex:Acquired", details: details})
+        this.log.jinfo({ event: "TRADE:OpenPerpFiPosition:NonceMutex:Acquired", details: details })
         let tx
         try {
             if (details) {
@@ -45,20 +45,12 @@ export class Order {
                 details.ppSentTimestamp = Date.now()
             }
             // send tx to trade
-            tx = await this.perpService.openPosition(
-                wallet,
-                amm.address,
-                side,
-                amount,
-                leverage,
-                baseAssetAmountLimit,
-                {
-                    nonce: nonceService.get(),
-                    gasPrice: safeGasPrice,
-                },
-            )
+            tx = await this.perpService.openPosition(wallet, amm.address, side, amount, leverage, baseAssetAmountLimit, {
+                nonce: nonceService.get(),
+                gasPrice: safeGasPrice,
+            })
             nonceService.increment()
-        } catch(e) {
+        } catch (e) {
             if (details) {
                 details.ppState = "FAILED"
                 details.onFail()
@@ -68,8 +60,8 @@ export class Order {
                 params: {
                     etype: "failed to create tx",
                     ammPair: pair,
-                    details: details
-                }
+                    details: details,
+                },
             })
             await nonceService.unlockedSync()
             throw e
@@ -102,9 +94,9 @@ export class Order {
             // const event = txReceipt.events.filter((event: any) => event.event === "PositionChanged")[0]
             // const positionChangedLog = PerpUtils.toPositionChangedLog(event.args)
             const txReceipt = await this.perpService.ethService.waitForTransaction(tx.hash, 90000, `${Side[side]}:TRADE:OpenPerpFiPosition:TxnReceipt:TIMEOUT:90s`)
-            const eventArgs = await this.perpService.getEventArgs(wallet, tx, txReceipt, 'PositionChanged')
+            const eventArgs = await this.perpService.getEventArgs(wallet, tx, txReceipt, "PositionChanged")
             if (!eventArgs) {
-              throw Error("transaction failed: " + JSON.stringify({transactionHash: tx.hash, transaction: tx, receipt: txReceipt}))
+                throw Error("transaction failed: " + JSON.stringify({ transactionHash: tx.hash, transaction: tx, receipt: txReceipt }))
             }
             const positionChangedLog = PerpUtils.argsToPositionChangedLog(eventArgs)
             if (details) {
@@ -125,8 +117,8 @@ export class Order {
                 params: {
                     ammPair: pair,
                     positionChangedLog,
-                    details: details
-                }
+                    details: details,
+                },
             })
             return positionChangedLog
         } catch (e) {
@@ -138,8 +130,8 @@ export class Order {
                 event: `${Side[side]}:TRADE:OpenPerpFiPosition:FAILED`,
                 params: {
                     ammPair: pair,
-                    details: details
-                }
+                    details: details,
+                },
             })
             throw e
         }
