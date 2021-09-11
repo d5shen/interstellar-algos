@@ -10,7 +10,7 @@ import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
 import { ERC20Service } from "./eth/ERC20Service"
 import { EthMetadata, SystemMetadataFactory } from "./eth/SystemMetadataFactory"
-import { EthService, EthServiceRO } from "./eth/EthService"
+import { EthService, EthServiceReadOnly } from "./eth/EthService"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { PerpService } from "./eth/perp/PerpService"
@@ -43,9 +43,9 @@ export class AlgoExecutionService {
     protected readonly wallet: Wallet
     protected readonly walletRO: Wallet
     protected readonly ethService: EthService
-    protected readonly ethServiceRO: EthServiceRO
+    protected readonly ethServiceReadOnly: EthServiceReadOnly
     protected readonly perpService: PerpService
-    protected readonly perpServiceRO: PerpService
+    protected readonly perpServiceReadOnly: PerpService
     protected readonly erc20Service: ERC20Service
     protected readonly nonceService: NonceService
     protected readonly gasService: GasService
@@ -68,13 +68,13 @@ export class AlgoExecutionService {
         this.wallet = this.ethService.privateKeyToWallet(this.serverProfile.walletPrivateKey)
         this.perpService = new PerpService(this.ethService, this.systemMetadataFactory)
 
-        this.ethServiceRO = new EthServiceRO(this.serverProfile)
-        this.walletRO = this.ethServiceRO.privateKeyToWallet(this.serverProfile.walletPrivateKey)
-        this.perpServiceRO = new PerpService(this.ethServiceRO, this.systemMetadataFactory)
+        this.ethServiceReadOnly = new EthServiceReadOnly(this.serverProfile)
+        this.walletRO = this.ethServiceReadOnly.privateKeyToWallet(this.serverProfile.walletPrivateKey)
+        this.perpServiceReadOnly = new PerpService(this.ethServiceReadOnly, this.systemMetadataFactory)
 
-        this.erc20Service = new ERC20Service(this.ethService, this.ethServiceRO)
+        this.erc20Service = new ERC20Service(this.ethService, this.ethServiceReadOnly)
 
-        this.gasService = new GasService(this.ethServiceRO)
+        this.gasService = new GasService(this.ethServiceReadOnly)
         this.nonceService = NonceService.get(this.walletRO)
 
         fs.watchFile(configPath, (curr, prev) => this.configChanged(curr, prev))
@@ -83,14 +83,14 @@ export class AlgoExecutionService {
     async initialize(): Promise<void> {
         if (!this.initialized) {
             this.systemMetadata = await this.systemMetadataFactory.fetch()
-            this.openAmms = await this.perpServiceRO.getAllOpenAmms()
+            this.openAmms = await this.perpServiceReadOnly.getAllOpenAmms()
             await this.gasService.sync()
             await this.nonceService.sync()
             this.loadConfigs()
             const preloadStats = this.loadStats()
 
             for (let amm of this.openAmms) {
-                const ammState = await this.perpServiceRO.getAmmStates(amm.address)
+                const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
                 const ammPair = AmmUtils.getAmmPair(ammState)
                 const quoteAssetAddress = await amm.quoteAsset()
                 const ammConfig = this.configs.get(ammPair)
@@ -249,7 +249,7 @@ export class AlgoExecutionService {
         setInterval(async () => {
             await this.printPositions()
             await this.syncNonce()
-            await this.ethServiceRO.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
+            await this.ethServiceReadOnly.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
             this.saveStats()
         }, 1000 * slowPollFrequency) // slower than others
     }
@@ -424,7 +424,7 @@ export class AlgoExecutionService {
     protected async prechecks(): Promise<Boolean> {
         let ok = true
         // Check xDai balance - needed for gas payments
-        const xDaiBalance = await this.ethServiceRO.getBalance(this.wallet.address)
+        const xDaiBalance = await this.ethServiceReadOnly.getBalance(this.wallet.address)
         this.log.jinfo({
             event: "xDaiBalance",
             params: { balance: xDaiBalance.toFixed(4) },
@@ -508,7 +508,7 @@ export class AlgoExecutionService {
         const perpFiValue = totalPositionValue
 
         // add xDai balance
-        const xDaiBalance = await this.ethServiceRO.getBalance(this.wallet.address)
+        const xDaiBalance = await this.ethServiceReadOnly.getBalance(this.wallet.address)
         totalPositionValue = totalPositionValue.add(xDaiBalance)
 
         this.log.jinfo({

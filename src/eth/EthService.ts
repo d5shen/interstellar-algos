@@ -45,12 +45,7 @@ export class BaseEthService {
         for (let i = 0; i < 3; i++) {
             const gasPrice = Big((await this.provider.getGasPrice()).toString())
             if (gasPrice.gt(BIG_ZERO)) {
-                return parseUnits(
-                    gasPrice
-                        .mul(1.0) // do i need to adjust gas? how do we optimize gas?
-                        .toFixed(0),
-                    0,
-                )
+                return parseUnits(gasPrice.mul(1.0).toFixed(0), 0)
             }
         }
         throw new Error("GasPrice is 0")
@@ -168,21 +163,16 @@ export class EthService extends BaseEthService {
 }
 
 @Service()
-export class EthServiceRO extends BaseEthService {
+export class EthServiceReadOnly extends BaseEthService {
 
     constructor(readonly serverProfile: ServerProfile) {
         super()
         const endpoint: string = this.serverProfile.web3EndpointRO
         this.web3Endpoint = endpoint
-        let urlOrInfo: any
-        if (endpoint.search("ankr.com") > 0) {
-            urlOrInfo = {url: endpoint, user: "beavermit12", password: "Anchorzzz!"}
-        } else {
-            urlOrInfo = {url: endpoint}
-        }
+        const urlOrInfo = {url: endpoint}
         this.provider = new JsonRpcProvider(urlOrInfo)
         this.provider.on("error", (tx) => {
-            EthServiceRO.log.jerror({
+            EthServiceReadOnly.log.jerror({
                 event: "WebSocketProvider:error",
                 tx: tx
             })
