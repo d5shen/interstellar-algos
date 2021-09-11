@@ -144,3 +144,4 @@ stats.json
 
 #.vscode
 .vscode
+.DS_Store
