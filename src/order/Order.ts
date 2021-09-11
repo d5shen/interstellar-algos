@@ -8,6 +8,13 @@ import { PerpService } from "../eth/perp/PerpService"
 import { Wallet } from "@ethersproject/wallet"
 import Big from "big.js"
 
+export enum OrderStatus {
+    PENDING,
+    IN_PROGRESS,
+    CANCELED,
+    COMPLETED
+}
+
 export class Order {
     private readonly log = Log.getLogger(Order.name)
     private id: string
@@ -16,7 +23,7 @@ export class Order {
     private direction: Side
     private quantity: Big // should this be in notional or contracts?
     private filled: Big = BIG_ZERO
-    private status: any // should be an enum PENDING, INFLIGHT, CANCELED, COMPLETED?
+    private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
     private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
 
     constructor(readonly perpService: PerpService, amm: Amm, pair: string, direction: Side, quantity: Big) {
@@ -30,6 +37,15 @@ export class Order {
     async check(): Promise<any> {
         // do important stuff
     }
+
+    get status(): OrderStatus {
+        return this._status
+    }
+
+    private set status(value: OrderStatus) {
+        this._status = value
+    }
+    
 
     //TODO:
     //  move sendChildOrder to Algo or Executor object

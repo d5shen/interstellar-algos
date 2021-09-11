@@ -3,10 +3,10 @@ import { AmmProperties } from "../AlgoExecutionService"
 import { GasService, NonceService } from "../amm/AmmUtils"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
-import { Order } from "./Order"
+import { Order, OrderStatus } from "./Order"
 import { PerpService } from "../eth/perp/PerpService"
-import { Wallet } from "ethers"
 import { Side } from "../Constants"
+import { Wallet } from "ethers"
 import Big from "big.js"
 
 export class OrderManager {
@@ -24,10 +24,10 @@ export class OrderManager {
         this.nonceService = NonceService.getInstance(wallet)
     }
 
-    // do we need a mutex to lock the parentOrders?
+    // do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         return await Promise.all(
-            this.parentOrders.map((order: Order) => {
+            this.parentOrders.filter(order => order.status == OrderStatus.IN_PROGRESS).map((order: Order) => {
                 return order.check()
             })
         )
