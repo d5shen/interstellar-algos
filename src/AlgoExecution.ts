@@ -98,13 +98,7 @@ export class AlgoExecution {
                 if (ammConfig) {
                     const stats = preloadStats.get(ammPair)
 
-                    let ammProps = new AmmProperties(
-                        ammPair,
-                        quoteAssetAddress,
-                        AmmUtils.getAmmPrice(ammState),
-                        ammState.baseAssetReserve,
-                        ammState.quoteAssetReserve
-                    )
+                    let ammProps = new AmmProperties(ammPair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
                     this.amms.set(amm.address, ammProps)
                 }
             }
@@ -289,42 +283,11 @@ export class AlgoExecution {
         this.log.jinfo({ event: "Contract", params: { address: contract.address } })
 
         try {
-            contract.on(
-                "PositionChanged",
-                (
-                    trader,
-                    ammAddress,
-                    margin,
-                    positionNotional,
-                    exchangedPositionSize,
-                    fee,
-                    positionSizeAfter,
-                    realizedPnl,
-                    unrealizedPnlAfter,
-                    badDebt,
-                    liquidationPenalty,
-                    spotPrice,
-                    fundingPayment
-                ) => {
-                    // can't have any awaits inside this event listener function to be logged
-                    // can only call one async function as an event handler to do something
-                    this.handlePositionChange(
-                        trader,
-                        ammAddress,
-                        margin,
-                        positionNotional,
-                        exchangedPositionSize,
-                        fee,
-                        positionSizeAfter,
-                        realizedPnl,
-                        unrealizedPnlAfter,
-                        badDebt,
-                        liquidationPenalty,
-                        spotPrice,
-                        fundingPayment
-                    )
-                }
-            )
+            contract.on("PositionChanged", (trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment) => {
+                // can't have any awaits inside this event listener function to be logged
+                // can only call one async function as an event handler to do something
+                this.handlePositionChange(trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment)
+            })
         } catch (e) {
             this.log.jerror({
                 event: "ListenPositionChanged:FAILED",
@@ -392,12 +355,7 @@ export class AlgoExecution {
         }
     }
 
-    private async handleReserveSnapshot(
-        amm: Amm,
-        quoteAssetReserve: BigNumber,
-        baseAssetReserve: BigNumber,
-        timestamp: BigNumber
-    ) {
+    private async handleReserveSnapshot(amm: Amm, quoteAssetReserve: BigNumber, baseAssetReserve: BigNumber, timestamp: BigNumber) {
         if (this.amms.has(amm.address)) {
             const newQuoteAssetReserve = PerpUtils.fromWei(quoteAssetReserve)
             const newBaseAssetReserve = PerpUtils.fromWei(baseAssetReserve)
@@ -493,15 +451,10 @@ export class AlgoExecution {
         for (let amm of this.openAmms) {
             if (this.amms.has(amm.address)) {
                 if (totalPositionValue.eq(BIG_ZERO)) {
-                    const quoteBalance = await this.erc20Service.balanceOf(
-                        this.amms.get(amm.address)!.quoteAsset,
-                        this.wallet.address
-                    )
+                    const quoteBalance = await this.erc20Service.balanceOf(this.amms.get(amm.address)!.quoteAsset, this.wallet.address)
                     totalPositionValue = totalPositionValue.add(quoteBalance)
                 }
-                const [position, unrealizedPnl] = await this.positionService.getPerpPositonWithUnrealizedPnl(
-                    amm.address
-                )
+                const [position, unrealizedPnl] = await this.positionService.getPerpPositonWithUnrealizedPnl(amm.address)
                 totalPositionValue = totalPositionValue.add(position.margin).add(unrealizedPnl)
             }
         }
