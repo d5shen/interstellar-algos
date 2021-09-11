@@ -13,6 +13,7 @@ import { EthMetadata, SystemMetadataFactory } from "./eth/SystemMetadataFactory"
 import { EthService, EthServiceReadOnly } from "./eth/EthService"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
+import { OrderManager } from "./order/OrderManager"
 import { PerpService } from "./eth/perp/PerpService"
 import { PerpPositionService } from "./eth/perp/PerpPositionService"
 import { preflightCheck } from "./configs"
@@ -59,6 +60,7 @@ export class AlgoExecutionService {
     protected initialized = false
     protected lastPrecheck = false
     protected amms = new Map<string, AmmProperties>() // key = AMM Contract Address
+    protected orderManagers = new Map<string, OrderManager>() // key = AMM Contract Address
     protected configs = new Map<string, AmmConfig>() // key = AMM Pair Name
 
     constructor() {
@@ -75,7 +77,7 @@ export class AlgoExecutionService {
         this.erc20Service = new ERC20Service(this.ethService, this.ethServiceReadOnly)
 
         this.gasService = new GasService(this.ethServiceReadOnly)
-        this.nonceService = NonceService.get(this.walletRO)
+        this.nonceService = NonceService.getInstance(this.walletRO)
 
         fs.watchFile(configPath, (curr, prev) => this.configChanged(curr, prev))
     }
@@ -91,21 +93,16 @@ export class AlgoExecutionService {
 
             for (let amm of this.openAmms) {
                 const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
-                const ammPair = AmmUtils.getAmmPair(ammState)
+                const pair = AmmUtils.getAmmPair(ammState)
                 const quoteAssetAddress = await amm.quoteAsset()
-                const ammConfig = this.configs.get(ammPair)
+                const ammConfig = this.configs.get(pair)
 
                 if (ammConfig) {
-                    const stats = preloadStats.get(ammPair)
+                    const stats = preloadStats.get(pair)
 
-                    let ammProps = new AmmProperties(
-                        ammPair,
-                        quoteAssetAddress,
-                        AmmUtils.getAmmPrice(ammState),
-                        ammState.baseAssetReserve,
-                        ammState.quoteAssetReserve
-                    )
+                    let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
                     this.amms.set(amm.address, ammProps)
+                    this.orderManagers.set(amm.address, new OrderManager(this.wallet, amm, pair, this.perpService, this.gasService))
                 }
             }
 
@@ -221,24 +218,24 @@ export class AlgoExecutionService {
 
     async start(): Promise<void> {
         await this.initialize()
-        await this.execute()
+        await this.checkOrders()
     }
 
     async startInterval(): Promise<void> {
         try {
-            await AmmUtils.createTimeout(() => this.initialize(), 90000, "AlgoExecution:initialize:TIMEOUT:90s")
+            await AmmUtils.createTimeout(() => this.initialize(), 90000, "AlgoExecutionService:initialize:TIMEOUT:90s")
         } catch (e) {
             this.log.error(e)
             process.exit(1)
         }
         await this.subscribe()
         await this.printPositions()
-        await this.execute()
+        await this.checkOrders()
         await Promise.all([this.startPrechecks(), this.startExecution(), this.startSlowPolls()])
     }
 
     private async startExecution(): Promise<void> {
-        setInterval(async () => await this.execute(), 1000 * pollFrequency)
+        setInterval(async () => await this.checkOrders(), 1000 * pollFrequency)
     }
 
     protected async startPrechecks(): Promise<void> {
@@ -361,15 +358,15 @@ export class AlgoExecutionService {
                 event: "PositionChanged",
                 params: {
                     ammPair: ammProps.pair,
-                    spotPrice: newSpotPrice, // current price
+                    spotPrice: newSpotPrice,                                            // current price
                     trader: trader,
                     amm: ammAddress,
                     margin: PerpUtils.fromWei(margin),
-                    positionNotional: PerpUtils.fromWei(positionNotional), // in USDC, absolute value
-                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize), // traded #contracts (signed), buy or sell obvious
-                    fee: PerpUtils.fromWei(fee), // 10bps fee
-                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter), // new position size, in #contracts (signed);
-                    //    if 0: closed position; if equal exchangedPositionSize: opened position
+                    positionNotional: PerpUtils.fromWei(positionNotional),              // in USDC, absolute value
+                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize),    // traded #contracts (signed), buy or sell obvious
+                    fee: PerpUtils.fromWei(fee),                                        // 10bps fee
+                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter),            // new position size, in #contracts (signed);
+                                                                                        //    if 0: closed position; if equal exchangedPositionSize: opened position
                     price: ammProps.price,
                 },
             })
@@ -439,16 +436,11 @@ export class AlgoExecutionService {
         return ok
     }
 
-    async processAmmCall(eventName: string, callback: (a: any) => Promise<any>): Promise<void> {
+    async processAmmCall(eventName: string, callback: (a: Amm) => Promise<any>): Promise<void> {
         await Promise.all(
-            this.openAmms.map(async (amm) => {
+            this.openAmms.map(async (amm: Amm) => {
                 try {
-                    if (this.amms.has(amm.address)) {
-                        let order = null
-                        if (order != null) {
-                            return await callback(order)
-                        }
-                    }
+                    callback(amm)
                 } catch (e) {
                     this.log.jerror({
                         event: `${eventName}:FAILED`,
@@ -463,10 +455,13 @@ export class AlgoExecutionService {
         )
     }
 
-    private async execute(): Promise<void> {
-        await this.processAmmCall("ExecuteOrder", async (a: any) => {
-            const ammProps = this.amms.get(a.amm.address)!
-            // execute the order?
+    private async checkOrders(): Promise<void> {
+        // ask the order manager to check orders?
+        await this.processAmmCall("OrderManager:CheckOrders", async (a: Amm) => {
+            if (this.amms.has(a.address) && this.orderManagers.has(a.address)) {
+                const o = this.orderManagers.get(a.address)
+                o.checkOrders(this.amms.get(a.address))
+            }
         })
     }
 
@@ -474,7 +469,7 @@ export class AlgoExecutionService {
         // attempt to sync the nonce only if we're currently not in the middle of a trade
         let awaitingTrade = false
         this.amms.forEach((value, key) => {
-            // check if all the orders are in flight??
+            // check if any orders are in flight before syncing the nonce
         })
         if (!awaitingTrade) {
             this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
@@ -482,8 +477,11 @@ export class AlgoExecutionService {
     }
 
     protected async printPositions(): Promise<void> {
-        await this.processAmmCall("PrintPositions", async (a: any) => {
-            this.positionService.printPosition(a.amm.address, a.ammPair)
+        await this.processAmmCall("PrintPositions", async (a: Amm) => {
+            if (this.amms.has(a.address)) {
+                const v = this.amms.get(a.address)
+                this.positionService.printPosition(a.address, v.pair)
+            }
         })
         await this.calculateTotalValue()
     }

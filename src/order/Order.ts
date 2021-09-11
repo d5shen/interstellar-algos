@@ -32,7 +32,7 @@ export class Order {
      **  Trading functions
      ********************************************/
     private async sendChildOrder(wallet: Wallet, amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
-        const nonceService = NonceService.get(wallet)
+        const nonceService = NonceService.getInstance(wallet)
         const amount = quoteAssetAmount.div(leverage)
         this.log.jinfo({ event: "TRADE:OpenPerpFiPosition:NonceMutex:Wait", details: details })
         const release = await nonceService.mutex.acquire()

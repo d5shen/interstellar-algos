@@ -47,7 +47,7 @@ export class GasService {
 
 export class NonceService {
     private static instances: Map<Wallet, NonceService>
-    public static get(wallet: Wallet): NonceService {
+    public static getInstance(wallet: Wallet): NonceService {
         if (!NonceService.instances.has(wallet)) {
             NonceService.instances.set(wallet, new NonceService(wallet))
         }
