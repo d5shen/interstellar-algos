@@ -3,10 +3,10 @@ import { Amm } from "../../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
-import { Wallet } from "@ethersproject/wallet"
-import Big from "big.js"
 import { NonceService } from "../amm/AmmUtils"
 import { PerpService } from "../eth/perp/PerpService"
+import { Wallet } from "@ethersproject/wallet"
+import Big from "big.js"
 
 export class Order {
     private readonly log = Log.getLogger(Order.name)
@@ -26,8 +26,13 @@ export class Order {
         this.quantity = quantity
     }
 
+    // called by the OrderManager when it's loop time to check on this parent order
+    async check(): Promise<any> {
+        // do important stuff
+    }
+
     //TODO:
-    //  ?
+    //  move sendChildOrder to Algo or Executor object
     /********************************************
      **  Trading functions
      ********************************************/
