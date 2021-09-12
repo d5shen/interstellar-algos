@@ -1,11 +1,7 @@
 import * as PerpUtils from "../eth/perp/PerpUtils"
 import { Amm } from "../../types/ethers"
-import { BigNumber } from "@ethersproject/bignumber"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
-import { NonceService } from "../amm/AmmUtils"
-import { PerpService } from "../eth/perp/PerpService"
-import { Wallet } from "@ethersproject/wallet"
 import Big from "big.js"
 import { Algo, AlgoStatus, Twap } from "../Algo"
 
@@ -30,8 +26,7 @@ export class Order {
         // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to work on
         // id should be pair.COUNTER
 
-        // shouldn't the Order create the Algo object and not the OrderManager??
-        // I think algo should be created here using an AlgoFactory singleton??
+        // should the Order create the Algo object and or the OrderManager?
         // this.algo = AlgoFactory.getInstance().create(algoType, params...)
     }
 
