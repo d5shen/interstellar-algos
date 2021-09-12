@@ -44,7 +44,7 @@ export class OrderManager {
     }
 
     createOrder(direction: Side, quantity: Big, algo: Algo): Order {
-        const o = new Order(this.perpService, this.amm, this.pair, direction, quantity, algo)
+        const o = new Order(this.amm, this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
     }

@@ -4,6 +4,7 @@ import { Log } from "./Log"
 import Big from "big.js"
 import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
+import { AlgoExecutor } from "./AlgoExecutor"
 
 export enum AlgoStatus {
     INITIALIZED,
@@ -16,14 +17,14 @@ export abstract class Algo {
 
     protected lastTradeTime: number = 0 // initialize the lastTradeTime, epoch
 
-    private executionService: AlgoExecutionService
+    private executionService: AlgoExecutor
     private amm: Amm
     protected _quantity: Big // the total quantity (either contract or total notional) needs to work on by Algo.
     protected direction: Side
     protected remaingQuantity: Big
     protected status: AlgoStatus = AlgoStatus.INITIALIZED
 
-    constructor(executionService: AlgoExecutionService, amm: Amm, quantity: Big, direction: Side) {
+    constructor(executionService: AlgoExecutor, amm: Amm, quantity: Big, direction: Side) {
         this.executionService = executionService
         this.amm = amm
         this.quantity = quantity
@@ -33,13 +34,17 @@ export abstract class Algo {
     }
 
     // TODO: below should be from executionService.sendChildOrder or sth similar like that
+    // TODO: maybe execute needs some arguments, at least it needs gas, leverage, childOrder object (TradeRecord)
+    // TODO: the specific Algo's execute() function should be the one determining slippage
+    //   I don't think Algo abstract class should have implementation?
     async execute(): Promise<AlgoStatus> {
         this.remaingQuantity = this.remaingQuantity.add(this.tradeQuantity())
         this.lastTradeTime = Date.now()
 
         const tradeRecord = this.buildTradeRecord()
         // TODO: How should the service call the sendChildOrder
-        // this.executionService.sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord)
+        //  quoteAssetAmount is in NOTIONAL, not size/# of contracts
+        //this.executionService.sendChildOrder(this.amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, this.direction, details: TradeRecord)
         return this.status
     }
 
@@ -48,6 +53,7 @@ export abstract class Algo {
         this.remaingQuantity = value
     }
 
+    // returns true if we should trade (send a child order) this loop cycle
     abstract checkTradeCondition(): boolean
 
     abstract tradeQuantity(): Big
@@ -74,7 +80,7 @@ export class Twap extends Algo {
 
     // todo
     //    implement the algoSettings class/interface
-    constructor(executionService: AlgoExecutionService, amm: Amm, quantity: Big, direction: Side, algoSettings: any) {
+    constructor(executionService: AlgoExecutor, amm: Amm, quantity: Big, direction: Side, algoSettings: any) {
         super(executionService, amm, quantity, direction)
 
         this.time = algoSettings.TIME

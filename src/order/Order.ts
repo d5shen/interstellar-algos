@@ -18,7 +18,7 @@ export enum OrderStatus {
 
 export class Order {
     private readonly log = Log.getLogger(Order.name)
-    private id: string
+    private id: string 
     private amm: Amm
     private pair: string
     private direction: Side
@@ -28,7 +28,7 @@ export class Order {
     private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
     private algo: Algo
 
-    constructor(readonly perpService: PerpService, amm: Amm, pair: string, direction: Side, quantity: Big, algo: Algo) {
+    constructor(amm: Amm, pair: string, direction: Side, quantity: Big, algo: Algo) {
         // TODO
         // pair, quantity and direction should be pass from Order to Algo
         // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to work on
@@ -37,6 +37,7 @@ export class Order {
         this.direction = direction
         this.quantity = quantity
         this.algo = algo
+        // id should be pair.COUNTER
     }
 
     // called by the OrderManager when it's loop time to check on this parent order
@@ -44,9 +45,12 @@ export class Order {
         if (this.algo.checkTradeCondition()) {
             // hmm should this checkTradeCondition inside of the execute funcion?????
 
+            // a simple trade Id could just be PARENT_ID.COUNTER, e.g.  FTT-USDC.1.1 then FTT-USDC.1.2 etc
             let childOrder = this.algo.buildTradeRecord()
             this.childOrders.set(childOrder.tradeId, childOrder)
         }
+
+        // TODO: shouldn't this be inside the checkTradeCondition() if-statement?
         let algoStatus: AlgoStatus = await this.algo.execute()
         if (algoStatus === AlgoStatus.COMPLETED) {
             this.status = OrderStatus.COMPLETED
