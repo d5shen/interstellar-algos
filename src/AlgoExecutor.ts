@@ -18,6 +18,12 @@ export class AlgoExecutor {
         
     }
 
+    /*
+     *  quoteAssetAmount - notional to trade
+     *  baseAssetAmountLimit - slippage tolerance
+     *  leverage - up to 10x
+     *  childOrder - pre-instantiated TradeRecord
+     */
     public async sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)

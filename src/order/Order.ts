@@ -7,7 +7,7 @@ import { NonceService } from "../amm/AmmUtils"
 import { PerpService } from "../eth/perp/PerpService"
 import { Wallet } from "@ethersproject/wallet"
 import Big from "big.js"
-import { Algo, AlgoStatus } from "../Algo"
+import { Algo, AlgoStatus, Twap } from "../Algo"
 
 export enum OrderStatus {
     PENDING,
@@ -19,25 +19,20 @@ export enum OrderStatus {
 export class Order {
     private readonly log = Log.getLogger(Order.name)
     private id: string 
-    private amm: Amm
-    private pair: string
-    private direction: Side
-    private quantity: Big // should this be in notional or contracts?
     private filled: Big = BIG_ZERO
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
     private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
     private algo: Algo
 
-    constructor(amm: Amm, pair: string, direction: Side, quantity: Big, algo: Algo) {
+    constructor(readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
         // TODO
         // pair, quantity and direction should be pass from Order to Algo
         // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to work on
-        this.amm = amm
-        this.pair = pair
-        this.direction = direction
-        this.quantity = quantity
-        this.algo = algo
         // id should be pair.COUNTER
+
+        // shouldn't the Order create the Algo object and not the OrderManager??
+        // I think algo should be created here using an AlgoFactory singleton??
+        // this.algo = AlgoFactory.getInstance().create(algoType, params...)
     }
 
     // called by the OrderManager when it's loop time to check on this parent order

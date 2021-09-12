@@ -5,6 +5,10 @@ import Big from "big.js"
 import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
 
+export enum AlgoType {
+    TWAP
+}
+
 export enum AlgoStatus {
     INITIALIZED,
     IN_PROGRESS,
