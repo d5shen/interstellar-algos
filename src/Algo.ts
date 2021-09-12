@@ -3,6 +3,8 @@ import "./init"
 import { BIG_ZERO, Side } from "./Constants"
 import { Log } from "./Log"
 import Big from "big.js"
+import { Amm } from "../types/ethers"
+import { size } from "lodash"
 
 export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
@@ -10,12 +12,14 @@ export abstract class Algo {
     protected lastTradeTime: number = 0 // initialize the lastTradeTime, epoch
 
     private executionService: AlgoExecutionService
-    protected quantity: Big // the total quantity (either contract or total notional) needs to work on by Algo.
+    private amm: Amm
+    protected _quantity: Big = BIG_ZERO // the total quantity (either contract or total notional) needs to work on by Algo.
     protected direction: Side
     protected remaingQuantity: Big
 
-    constructor(executionService: AlgoExecutionService, quantity: Big, direction: Side) {
+    constructor(executionService: AlgoExecutionService, amm: Amm, quantity: Big, direction: Side) {
         this.executionService = executionService
+        this.amm = amm
         this.quantity = quantity
         this.remaingQuantity = quantity
         this.direction = direction
@@ -29,7 +33,15 @@ export abstract class Algo {
 
             // TODO: How should the service call the sendChildOrder
             // this.executionService.sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord)
+            if (this.tradeDirection() === Side.BUY) {
+            } else {
+            }
         }
+    }
+
+    public set quantity(value: Big) {
+        this._quantity = value
+        this.remaingQuantity = value
     }
 
     abstract checkTradeCondition(): boolean
@@ -50,8 +62,8 @@ export class Twap extends Algo {
 
     // todo
     //    implement the algoSettings class/interface
-    constructor(executionService: AlgoExecutionService, quantity: Big, direction: Side, algoSettings: any) {
-        super(executionService, quantity, direction)
+    constructor(executionService: AlgoExecutionService, amm: Amm, quantity: Big, direction: Side, algoSettings: any) {
+        super(executionService, amm, quantity, direction)
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL

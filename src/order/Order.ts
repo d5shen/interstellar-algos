@@ -29,6 +29,8 @@ export class Order {
     private algo: Algo
 
     constructor(readonly perpService: PerpService, amm: Amm, pair: string, direction: Side, quantity: Big, algo: Algo) {
+        // pair, quantity and direction should be pass from Order to Algo
+        // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to handle
         this.amm = amm
         this.pair = pair
         this.direction = direction
