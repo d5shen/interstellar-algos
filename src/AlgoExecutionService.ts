@@ -559,7 +559,9 @@ export class AlgoExecutionService {
                 details.onSuccess()
             }
             // should update the parent order with details
+            // the details will be modified in memory, hence the original details obj pass into this funciton will also be modified
             // order.update(details)
+
             this.log.jinfo({
                 event: `${Side[side]}:TRADE:OpenPerpFiPosition:PASSED`,
                 params: {
