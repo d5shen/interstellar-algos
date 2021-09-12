@@ -1,10 +1,9 @@
-import { AlgoExecutionService } from "./AlgoExecutionService"
+import { AlgoExecutor } from "./AlgoExecutor"
 import { BIG_ZERO, Side } from "./Constants"
 import { Log } from "./Log"
 import Big from "big.js"
 import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
-import { AlgoExecutor } from "./AlgoExecutor"
 
 export enum AlgoStatus {
     INITIALIZED,
@@ -17,40 +16,33 @@ export abstract class Algo {
 
     protected lastTradeTime: number = 0 // initialize the lastTradeTime, epoch
 
-    private executionService: AlgoExecutor
-    private amm: Amm
-    protected _quantity: Big // the total quantity (either contract or total notional) needs to work on by Algo.
-    protected direction: Side
+    private _quantity: Big // the total quantity (either contract or total notional) needs to work on by Algo.
+    protected readonly direction: Side
     protected remaingQuantity: Big
     protected status: AlgoStatus = AlgoStatus.INITIALIZED
 
-    constructor(executionService: AlgoExecutor, amm: Amm, quantity: Big, direction: Side) {
-        this.executionService = executionService
-        this.amm = amm
-        this.quantity = quantity
+    protected constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, quantity: Big, direction: Side) {
+        this._quantity = quantity
         this.remaingQuantity = quantity
         this.direction = direction
         this.status = AlgoStatus.IN_PROGRESS
     }
 
-    // TODO: below should be from executionService.sendChildOrder or sth similar like that
+    // TODO: below should be from algoExecutor.sendChildOrder or sth similar like that
     // TODO: maybe execute needs some arguments, at least it needs gas, leverage, childOrder object (TradeRecord)
     // TODO: the specific Algo's execute() function should be the one determining slippage
-    //   I don't think Algo abstract class should have implementation?
-    async execute(): Promise<AlgoStatus> {
-        this.remaingQuantity = this.remaingQuantity.add(this.tradeQuantity())
+    // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
+    async execute(childOrder: TradeRecord): Promise<AlgoStatus> {
+        this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
         this.lastTradeTime = Date.now()
-
-        const tradeRecord = this.buildTradeRecord()
         // TODO: How should the service call the sendChildOrder
-        //  quoteAssetAmount is in NOTIONAL, not size/# of contracts
-        //this.executionService.sendChildOrder(this.amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, this.direction, details: TradeRecord)
+        //  quoteAssetAmount is in ABSOLUTE NOTIONAL, not size nor # of contracts
+        //this.algoExecutor.sendChildOrder(this.amm, this.pair, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, this.direction, childOrder)
         return this.status
     }
 
-    public set quantity(value: Big) {
-        this._quantity = value
-        this.remaingQuantity = value
+    protected get quantity(): Big {
+        return this._quantity
     }
 
     // returns true if we should trade (send a child order) this loop cycle
@@ -80,8 +72,8 @@ export class Twap extends Algo {
 
     // todo
     //    implement the algoSettings class/interface
-    constructor(executionService: AlgoExecutor, amm: Amm, quantity: Big, direction: Side, algoSettings: any) {
-        super(executionService, amm, quantity, direction)
+    constructor(algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, quantity: Big, direction: Side, algoSettings: any) {
+        super(algoExecutor, amm, pair, quantity, direction)
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL

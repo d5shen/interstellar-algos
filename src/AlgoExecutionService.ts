@@ -4,8 +4,7 @@ import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
 import { pollFrequency, configPath, slowPollFrequency, statsPath } from "./configs"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
-import { StatsKeys } from "./amm/AmmStats"
-import { BIG_ZERO, Side } from "./Constants"
+import { BIG_ZERO } from "./Constants"
 import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
 import { ERC20Service } from "./eth/ERC20Service"
@@ -21,6 +20,7 @@ import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Wallet } from "ethers"
 import Big from "big.js"
+import { AlgoExecutor } from "./AlgoExecutor"
 
 export class AmmProperties {
     readonly pair: string
@@ -51,6 +51,7 @@ export class AlgoExecutionService {
     protected readonly nonceService: NonceService
     protected readonly gasService: GasService
     protected readonly positionService: PerpPositionService
+    protected readonly algoExecutor: AlgoExecutor
 
     protected readonly serverProfile: ServerProfile = new ServerProfile()
     protected readonly systemMetadataFactory: SystemMetadataFactory
@@ -79,6 +80,8 @@ export class AlgoExecutionService {
         this.gasService = new GasService(this.ethServiceReadOnly)
         this.nonceService = NonceService.getInstance(this.walletReadOnly)
 
+        this.algoExecutor = new AlgoExecutor(this.wallet, this.perpService)
+
         fs.watchFile(configPath, (curr, prev) => this.configChanged(curr, prev))
     }
 
@@ -89,7 +92,6 @@ export class AlgoExecutionService {
             await this.gasService.sync()
             await this.nonceService.sync()
             this.loadConfigs()
-            const preloadStats = this.loadStats()
 
             for (let amm of this.openAmms) {
                 const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
@@ -98,11 +100,9 @@ export class AlgoExecutionService {
                 const ammConfig = this.configs.get(pair)
 
                 if (ammConfig) {
-                    const stats = preloadStats.get(pair)
-
                     let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
                     this.amms.set(amm.address, ammProps)
-                    this.orderManagers.set(amm.address, new OrderManager(this.wallet, amm, pair, this.perpService, this.gasService))
+                    this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
                 }
             }
 
@@ -114,61 +114,6 @@ export class AlgoExecutionService {
             this.initialized = true
         }
         return
-    }
-
-    protected loadStats(): Map<string, Map<string, Array<Big>>> {
-        try {
-            // check if the stats file exists and is less than X minutes old
-            let localStats = new Map<string, Map<string, Array<Big>>>()
-            if (fs.existsSync(statsPath)) {
-                const stats = fs.readFileSync(statsPath, "utf8")
-                const data = JSON.parse(stats, (key, value) => {
-                    if (key == "lastUpdated") {
-                        return new Date(value)
-                    } else if (StatsKeys.includes(key)) {
-                        return (value as Array<string>).map((item) => Big(item))
-                    }
-                    return value
-                })
-                // no lastUpdated or more than 10 mins old, return empty
-                if (!data.lastUpdated || Date.now() - data.lastUpdated > 1000 * 60 * 10) {
-                    return localStats
-                }
-
-                for (const key in data) {
-                    const pairStats = new Map<string, Array<Big>>()
-                    StatsKeys.forEach((priceType) => pairStats.set(priceType, data[key][priceType]))
-                    localStats.set(key, pairStats)
-                }
-                this.log.jinfo({
-                    event: "LoadStats:Done",
-                    params: { lastUpdated: data.lastUpdated },
-                })
-            }
-            return localStats
-        } catch (e) {
-            this.log.jerror({
-                event: "LoadStats:FAILED",
-                params: {
-                    result: "STATS NOT LOADED",
-                    reason: e.toString(),
-                    stackTrace: e.stack,
-                },
-            })
-            return new Map<string, Map<string, Array<Big>>>()
-        }
-    }
-
-    protected saveStats() {
-        const record: Record<string, any> = { lastUpdated: Date.now() }
-        this.amms.forEach((value: AmmProperties, key: string) => {
-            //record[value.pair] = value.saveStats()?
-        })
-        this.log.jinfo({
-            event: "SaveStats:OUTPUT",
-            params: { lastUpdated: record.lastUpdated },
-        })
-        fs.writeFileSync(statsPath, JSON.stringify(record), "utf8")
     }
 
     protected loadConfigs() {
@@ -247,7 +192,6 @@ export class AlgoExecutionService {
             await this.printPositions()
             await this.syncNonce()
             await this.ethServiceReadOnly.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
-            this.saveStats()
         }, 1000 * slowPollFrequency) // slower than others
     }
 

@@ -48,13 +48,13 @@ export class Order {
             // a simple trade Id could just be PARENT_ID.COUNTER, e.g.  FTT-USDC.1.1 then FTT-USDC.1.2 etc
             let childOrder = this.algo.buildTradeRecord()
             this.childOrders.set(childOrder.tradeId, childOrder)
+            // TODO: shouldn't this be inside the checkTradeCondition() if-statement?
+            let algoStatus: AlgoStatus = await this.algo.execute(childOrder)
+            if (algoStatus === AlgoStatus.COMPLETED) {
+                this.status = OrderStatus.COMPLETED
+            }
         }
 
-        // TODO: shouldn't this be inside the checkTradeCondition() if-statement?
-        let algoStatus: AlgoStatus = await this.algo.execute()
-        if (algoStatus === AlgoStatus.COMPLETED) {
-            this.status = OrderStatus.COMPLETED
-        }
     }
 
     get status(): OrderStatus {

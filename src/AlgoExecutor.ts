@@ -18,18 +18,18 @@ export class AlgoExecutor {
         
     }
 
-    public async sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+    public async sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)
-        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: details })
+        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: childOrder })
         const release = await nonceService.mutex.acquire()
-        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: details })
+        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: childOrder })
         let tx
         try {
-            if (details) {
-                details.ppGasPx = Big(safeGasPrice.toString())
-                details.ppBaseAssetAmountLimit = baseAssetAmountLimit
-                details.ppSentTimestamp = Date.now()
+            if (childOrder) {
+                childOrder.ppGasPx = Big(safeGasPrice.toString())
+                childOrder.ppBaseAssetAmountLimit = baseAssetAmountLimit
+                childOrder.ppSentTimestamp = Date.now()
             }
             // send tx to trade
             tx = await this.perpService.openPosition(this.wallet, amm.address, side, amount, leverage, baseAssetAmountLimit, {
@@ -38,16 +38,16 @@ export class AlgoExecutor {
             })
             nonceService.increment()
         } catch (e) {
-            if (details) {
-                details.ppState = "FAILED"
-                details.onFail()
+            if (childOrder) {
+                childOrder.ppState = "FAILED"
+                childOrder.onFail()
             }
             this.log.jerror({
                 event: `${Side[side]}:TRADE:sendChildOrder:FAILED`,
                 params: {
                     etype: "failed to create tx",
                     ammPair: pair,
-                    details: details,
+                    details: childOrder,
                 },
             })
             await nonceService.unlockedSync()
@@ -55,18 +55,18 @@ export class AlgoExecutor {
         } finally {
             release()
         }
-        if (details) {
-            details.ppAckTimestamp = Date.now()
-            details.ppState = "TX_RCVD"
-            details.ppTxHash = tx.hash
-            details.ppTxGasLimit = Big(tx.gasLimit.toString())
+        if (childOrder) {
+            childOrder.ppAckTimestamp = Date.now()
+            childOrder.ppState = "TX_RCVD"
+            childOrder.ppTxHash = tx.hash
+            childOrder.ppTxGasLimit = Big(tx.gasLimit.toString())
         }
 
         this.log.jinfo({
             event: `${Side[side]}:TRADE:sendChildOrder`,
             params: {
                 ammPair: pair,
-                details: details,
+                details: childOrder,
                 quoteAssetAmount: +quoteAssetAmount,
                 baseAssetAmountLimit: +baseAssetAmountLimit,
                 leverage: leverage.toFixed(),
@@ -86,16 +86,16 @@ export class AlgoExecutor {
                 throw Error("transaction failed: " + JSON.stringify({ transactionHash: tx.hash, transaction: tx, receipt: txReceipt }))
             }
             const positionChangedLog = PerpUtils.argsToPositionChangedLog(eventArgs)
-            if (details) {
-                details.ppFillTimestamp = Date.now()
-                details.ppState = "TX_CONFIRMED"
-                details.ppTxGasUsed = Big(txReceipt.gasUsed.toString())
-                details.ppTxStatus = txReceipt.status
-                details.ppTxBlockNumber = txReceipt.blockNumber
-                details.ppPositionChangedLog = positionChangedLog
-                details.ppExecSize = positionChangedLog.exchangedPositionSize
-                details.ppExecPx = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
-                details.onSuccess()
+            if (childOrder) {
+                childOrder.ppFillTimestamp = Date.now()
+                childOrder.ppState = "TX_CONFIRMED"
+                childOrder.ppTxGasUsed = Big(txReceipt.gasUsed.toString())
+                childOrder.ppTxStatus = txReceipt.status
+                childOrder.ppTxBlockNumber = txReceipt.blockNumber
+                childOrder.ppPositionChangedLog = positionChangedLog
+                childOrder.ppExecSize = positionChangedLog.exchangedPositionSize
+                childOrder.ppExecPx = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
+                childOrder.onSuccess()
             }
             // should update the parent order with details
             // the details will be modified in memory, hence the original details obj pass into this funciton will also be modified
@@ -106,20 +106,20 @@ export class AlgoExecutor {
                 params: {
                     ammPair: pair,
                     positionChangedLog,
-                    details: details,
+                    details: childOrder,
                 },
             })
             return positionChangedLog
         } catch (e) {
-            if (details) {
-                details.ppState = "FAILED"
-                details.onFail()
+            if (childOrder) {
+                childOrder.ppState = "FAILED"
+                childOrder.onFail()
             }
             this.log.jerror({
                 event: `${Side[side]}:TRADE:sendChildOrder:FAILED`,
                 params: {
                     ammPair: pair,
-                    details: details,
+                    details: childOrder,
                 },
             })
             throw e
