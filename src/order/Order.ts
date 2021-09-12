@@ -7,7 +7,7 @@ import { NonceService } from "../amm/AmmUtils"
 import { PerpService } from "../eth/perp/PerpService"
 import { Wallet } from "@ethersproject/wallet"
 import Big from "big.js"
-import { Algo } from "../Algo"
+import { Algo, AlgoStatus } from "../Algo"
 
 export enum OrderStatus {
     PENDING,
@@ -29,8 +29,9 @@ export class Order {
     private algo: Algo
 
     constructor(readonly perpService: PerpService, amm: Amm, pair: string, direction: Side, quantity: Big, algo: Algo) {
+        // TODO
         // pair, quantity and direction should be pass from Order to Algo
-        // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to handle
+        // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to work on
         this.amm = amm
         this.pair = pair
         this.direction = direction
@@ -40,8 +41,16 @@ export class Order {
 
     // called by the OrderManager when it's loop time to check on this parent order
     async check(): Promise<any> {
-        await this.algo.execute()
-        // do important stuff
+        if (this.algo.checkTradeCondition()) {
+            // hmm should this checkTradeCondition inside of the execute funcion?????
+
+            let childOrder = this.algo.buildTradeRecord()
+            this.childOrders.set(childOrder.tradeId, childOrder)
+        }
+        let algoStatus: AlgoStatus = await this.algo.execute()
+        if (algoStatus === AlgoStatus.COMPLETED) {
+            this.status = OrderStatus.COMPLETED
+        }
     }
 
     get status(): OrderStatus {
