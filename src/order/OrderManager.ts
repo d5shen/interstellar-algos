@@ -31,7 +31,7 @@ export class OrderManager {
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         // remove the order which status is completed
         this.parentOrders.forEach((order, index) => {
-            if (order.status == OrderStatus.COMPLETED) this.parentOrders.splice(index, 1)
+            if (order.status == OrderStatus.COMPLETED || order.status == OrderStatus.CANCELED) this.parentOrders.splice(index, 1)
         })
 
         return await Promise.all(
