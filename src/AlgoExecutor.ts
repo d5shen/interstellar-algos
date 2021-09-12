@@ -2,7 +2,7 @@ import "./init"
 import * as PerpUtils from "./eth/perp/PerpUtils"
 import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
-import { NonceService } from "./amm/AmmUtils"
+import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { PerpService } from "./eth/perp/PerpService"
 import { Side } from "./Constants"
@@ -14,7 +14,7 @@ import { TradeRecord } from "./order/Order"
 export class AlgoExecutor {
     private readonly log = Log.getLogger(AlgoExecutor.name)
 
-    constructor(readonly wallet: Wallet, readonly perpService: PerpService) {
+    constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {
         
     }
 
@@ -24,13 +24,14 @@ export class AlgoExecutor {
      *  leverage - up to 10x
      *  childOrder - pre-instantiated TradeRecord
      */
-    public async sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+    public async sendChildOrder(amm: Amm, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+        const safeGasPrice = this.gasService.get()
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)
         this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: childOrder })
         const release = await nonceService.mutex.acquire()
         this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: childOrder })
-        let tx
+        let tx: any
         try {
             if (childOrder) {
                 childOrder.ppGasPx = Big(safeGasPrice.toString())
@@ -100,7 +101,7 @@ export class AlgoExecutor {
                 childOrder.ppTxBlockNumber = txReceipt.blockNumber
                 childOrder.ppPositionChangedLog = positionChangedLog
                 childOrder.ppExecSize = positionChangedLog.exchangedPositionSize
-                childOrder.ppExecPx = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
+                childOrder.ppExecPrice = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
                 childOrder.onSuccess()
             }
             // should update the parent order with details

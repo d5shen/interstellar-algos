@@ -80,7 +80,7 @@ export class AlgoExecutionService {
         this.gasService = new GasService(this.ethServiceReadOnly)
         this.nonceService = NonceService.getInstance(this.walletReadOnly)
 
-        this.algoExecutor = new AlgoExecutor(this.wallet, this.perpService)
+        this.algoExecutor = new AlgoExecutor(this.wallet, this.perpService, this.gasService)
 
         fs.watchFile(configPath, (curr, prev) => this.configChanged(curr, prev))
     }

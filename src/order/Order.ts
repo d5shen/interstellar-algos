@@ -4,6 +4,7 @@ import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
 import { Algo, AlgoStatus, Twap } from "../Algo"
+import { AmmProperties } from "../AlgoExecutionService"
 
 export enum OrderStatus {
     PENDING,
@@ -23,28 +24,28 @@ export class Order {
     constructor(readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
         // TODO
         // pair, quantity and direction should be pass from Order to Algo
-        // the design should be: order tell the algo (etierh TWAP, VWAP) hoow much quanity and direction to work on
-        // id should be pair.COUNTER
+        // the design should be: order tell the algo (either TWAP, VWAP) hoow much quanity and direction to work on
+        // id should be pair.COUNTER or just a uuid
 
         // should the Order create the Algo object and or the OrderManager?
         // this.algo = AlgoFactory.getInstance().create(algoType, params...)
     }
 
     // called by the OrderManager when it's loop time to check on this parent order
-    async check(): Promise<any> {
-        if (this.algo.checkTradeCondition()) {
+    async check(ammProps: AmmProperties): Promise<any> {
+        if (this.algo.checkTradeCondition(ammProps)) {
             // hmm should this checkTradeCondition inside of the execute funcion?????
 
-            // a simple trade Id could just be PARENT_ID.COUNTER, e.g.  FTT-USDC.1.1 then FTT-USDC.1.2 etc
-            let childOrder = this.algo.buildTradeRecord()
+            // a simple Child trade Id could just be PARENT_ID.COUNTER, e.g.  FTT-USDC.1.0 then FTT-USDC.1.1 etc
+            const childOrder = this.buildTradeRecord("TEST." + this.childOrders.size)
             this.childOrders.set(childOrder.tradeId, childOrder)
+
             // TODO: shouldn't this be inside the checkTradeCondition() if-statement?
-            let algoStatus: AlgoStatus = await this.algo.execute(childOrder)
+            const algoStatus: AlgoStatus = await this.algo.execute(childOrder)
             if (algoStatus === AlgoStatus.COMPLETED) {
                 this.status = OrderStatus.COMPLETED
             }
         }
-
     }
 
     get status(): OrderStatus {
@@ -53,6 +54,16 @@ export class Order {
 
     private set status(value: OrderStatus) {
         this._status = value
+    }
+
+    private buildTradeRecord(tradeId: string): TradeRecord {
+        // TODO: implement this function
+        return new TradeRecord({
+            tradeId: tradeId,
+            pair: this.pair,
+            side: this.direction,
+            timestamp: Date.now(),
+        })
     }
 }
 
@@ -66,7 +77,7 @@ export class TradeRecord {
     timestamp: number | null = null
     size: Big = BIG_ZERO // quantity contracts
     notional: Big = BIG_ZERO
-    price: Big | null = null
+    price: Big | null = null // expected execution price
     // amm blockchain txn info
     ppState: string = "UNINIT"
     ppSentTimestamp: number | null = null // time when creating tx
@@ -75,7 +86,7 @@ export class TradeRecord {
     ppGasPx: Big = BIG_ZERO
     ppBaseAssetAmountLimit: Big | null = null
     ppExecSize: Big = BIG_ZERO
-    ppExecPx: Big | null = null
+    ppExecPrice: Big | null = null // actual execution price
     ppMaxSlip: Big = BIG_ZERO
     ppTxHash: string | null = null
     ppTxBlockNumber: number | null = null
@@ -83,6 +94,8 @@ export class TradeRecord {
     ppTxGasUsed: Big = BIG_ZERO
     ppTxStatus: number | undefined = undefined // false if txn reverted, true if successful
     ppPositionChangedLog: PerpUtils.PositionChangedLog | null = null
+
+    slippage: Big = BIG_ZERO // slippage in bps between price and ppExecPrice
 
     constructor(obj: Partial<TradeRecord>) {
         Object.assign(this, obj)

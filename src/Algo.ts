@@ -1,9 +1,11 @@
+import * as AmmUtils from "./amm/AmmUtils"
 import { AlgoExecutor } from "./AlgoExecutor"
-import { BIG_ZERO, Side } from "./Constants"
+import { BIG_100, BIG_1BP, BIG_HALF, BIG_ZERO, Side } from "./Constants"
 import { Log } from "./Log"
-import Big from "big.js"
 import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
+import { AmmProperties } from "./AlgoExecutionService"
+import Big from "big.js"
 
 export enum AlgoType {
     TWAP
@@ -33,15 +35,23 @@ export abstract class Algo {
     }
 
     // TODO: below should be from algoExecutor.sendChildOrder or sth similar like that
-    // TODO: maybe execute needs some arguments, at least it needs gas, leverage, childOrder object (TradeRecord)
+    // TODO: maybe execute needs some arguments, at least it needs leverage, childOrder object (TradeRecord)
+    //         - maybe Max Slippage and Leverage can be provided as constructor arguments?
     // TODO: the specific Algo's execute() function should be the one determining slippage
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
     async execute(childOrder: TradeRecord): Promise<AlgoStatus> {
         this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
         this.lastTradeTime = Date.now()
-        // TODO: How should the service call the sendChildOrder
+        childOrder.notional = this.tradeQuantity()
+        // TODO: the Algo calls the sendChildOrder
         //  quoteAssetAmount is in ABSOLUTE NOTIONAL, not size nor # of contracts
-        //this.algoExecutor.sendChildOrder(this.amm, this.pair, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, this.direction, childOrder)
+        //  baseAssetAmountLimit is minimum(or maximum) number of contracts before hitting max slippage 
+        //  we need the current price (stored in ammProps in the Order object)
+        //      size = notional.div(price)
+        //      if side == BUY:  baseAssetAmountLimit = size.mul(BIG_ONE.sub(this.maxSlippage())) // if buying FTT, I want to receive AT LEAST size*(1-0.005) contracts
+        //      if side == SELL: baseAssetAmountLimit = size.mul(BIG_ONE.add(this.maxSlippage())) // if selling FTT, I want to give up AT MOST size*(1+0.005) contracts
+
+        //this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit: Big, leverage: Big, childOrder)
         return this.status
     }
 
@@ -50,19 +60,12 @@ export abstract class Algo {
     }
 
     // returns true if we should trade (send a child order) this loop cycle
-    abstract checkTradeCondition(): boolean
+    // accepts the current state of the Amm (price and reserves)
+    abstract checkTradeCondition(ammProps: AmmProperties): boolean
 
+    // these can be dynamic depending on the type of Algo
     abstract tradeQuantity(): Big
-
-    public buildTradeRecord(): TradeRecord {
-        // TODO: implement this function
-        return new TradeRecord({
-            tradeId: "TEST",
-            side: this.direction,
-            notional: this.tradeQuantity(),
-            timestamp: Date.now(),
-        })
-    }
+    abstract maxSlippage(): Big
 }
 
 export class Twap extends Algo {
@@ -86,7 +89,7 @@ export class Twap extends Algo {
         this.startOfAlgo = Date.now()
     }
 
-    checkTradeCondition(): boolean {
+    checkTradeCondition(ammProps: AmmProperties): boolean {
         let sinceLastTradeTimeInSeconds = (Date.now() - this.lastTradeTime) / 1000
         this.timeElapse = (Date.now() - this.startOfAlgo) / 1000
         if (this.timeElapse > this.time) {
@@ -106,12 +109,16 @@ export class Twap extends Algo {
         }
 
         // upon return true, algo should do several things:
-        // 1. send the order; 2. update the emaining quantity 3. update the last trade time
+        // 1. send the order; 2. update the remaining quantity 3. update the last trade time
 
         return true
     }
 
     tradeQuantity(): Big {
         return this.remaingQuantity.lt(this.quantityPerTrade) ? this.remaingQuantity : this.quantityPerTrade
+    }
+
+    maxSlippage(): Big {
+        return BIG_HALF.div(BIG_100) //0.5%
     }
 }

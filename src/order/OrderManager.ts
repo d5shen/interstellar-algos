@@ -33,13 +33,13 @@ export class OrderManager {
             this.parentOrders
                 .filter((order) => order.status == OrderStatus.IN_PROGRESS)
                 .map((order: Order) => {
-                    return order.check()
+                    return order.check(ammProps)
                 })
         )
     }
 
     createOrder(direction: Side, quantity: Big, algoType: AlgoType, algoSettings: any): Order {
-        // I don't think the OrderManager should create the Algo (or Twap) object or maybe it should
+        // should the OrderManager should create the Algo (or Twap) object or should it be created inside new Order()?
         const algo = new Twap(this.algoExecutor, this.amm, this.pair, quantity, direction, algoSettings)
         const o = new Order(this.amm, this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
