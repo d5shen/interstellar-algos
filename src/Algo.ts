@@ -1,11 +1,9 @@
 import { AlgoExecutionService } from "./AlgoExecutionService"
-import "./init"
 import { BIG_ZERO, Side } from "./Constants"
 import { Log } from "./Log"
 import Big from "big.js"
 import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
-import { STATUS_CODES } from "http"
 
 export enum AlgoStatus {
     INITIALIZED,
