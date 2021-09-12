@@ -116,6 +116,6 @@ export class Twap extends Algo {
     }
 
     tradeQuantity(): Big {
-        return this.remaingQuantity < this.quantityPerTrade ? this.remaingQuantity : this.quantityPerTrade
+        return this.remaingQuantity.lt(this.quantityPerTrade) ? this.remaingQuantity : this.quantityPerTrade
     }
 }
