@@ -14,12 +14,14 @@ export class OrderManager {
     //   manages orders per Amm
     //   manage orders lol
     //   watch out for block reorgs...?
+    //   remove order out of parentOrders once it's completed.
+    //      Maybe we could fire a message event with some topic for the compelted orders with all the child order. In this case, any user (reportig/GUI/risk etc) can record such thing easily and notify the customer
 
     private readonly log = Log.getLogger(OrderManager.name)
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
     private readonly nonceService: NonceService
     private readonly parentOrders = new Array<Order>()
-    
+
     constructor(readonly wallet: Wallet, readonly amm: Amm, readonly pair: string, readonly perpService: PerpService, readonly gasService: GasService) {
         this.nonceService = NonceService.getInstance(wallet)
     }
@@ -27,9 +29,11 @@ export class OrderManager {
     // do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         return await Promise.all(
-            this.parentOrders.filter(order => order.status == OrderStatus.IN_PROGRESS).map((order: Order) => {
-                return order.check()
-            })
+            this.parentOrders
+                .filter((order) => order.status == OrderStatus.IN_PROGRESS)
+                .map((order: Order) => {
+                    return order.check()
+                })
         )
     }
 
