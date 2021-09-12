@@ -8,6 +8,7 @@ import { PerpService } from "../eth/perp/PerpService"
 import { Side } from "../Constants"
 import { Wallet } from "ethers"
 import Big from "big.js"
+import { Algo } from "../Algo"
 
 export class OrderManager {
     // TODO:
@@ -37,8 +38,8 @@ export class OrderManager {
         )
     }
 
-    createOrder(direction: Side, quantity: Big): Order {
-        const o = new Order(this.perpService, this.amm, this.pair, direction, quantity)
+    createOrder(direction: Side, quantity: Big, algo: Algo): Order {
+        const o = new Order(this.perpService, this.amm, this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
     }
