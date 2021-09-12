@@ -92,7 +92,7 @@ export class Twap extends Algo {
             return false
         }
 
-        if (this.remaingQuantity.cmp(BIG_ZERO) <= 0) {
+        if (this.remaingQuantity.lte(BIG_ZERO)) {
             this.twapLog.info("all quantity has been executed")
             this.status = AlgoStatus.COMPLETED
             return false
