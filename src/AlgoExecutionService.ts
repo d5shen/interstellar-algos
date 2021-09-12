@@ -286,42 +286,11 @@ export class AlgoExecutionService {
         this.log.jinfo({ event: "Contract", params: { address: contract.address } })
 
         try {
-            contract.on(
-                "PositionChanged",
-                (
-                    trader,
-                    ammAddress,
-                    margin,
-                    positionNotional,
-                    exchangedPositionSize,
-                    fee,
-                    positionSizeAfter,
-                    realizedPnl,
-                    unrealizedPnlAfter,
-                    badDebt,
-                    liquidationPenalty,
-                    spotPrice,
-                    fundingPayment
-                ) => {
-                    // can't have any awaits inside this event listener function to be logged
-                    // can only call one async function as an event handler to do something
-                    this.handlePositionChange(
-                        trader,
-                        ammAddress,
-                        margin,
-                        positionNotional,
-                        exchangedPositionSize,
-                        fee,
-                        positionSizeAfter,
-                        realizedPnl,
-                        unrealizedPnlAfter,
-                        badDebt,
-                        liquidationPenalty,
-                        spotPrice,
-                        fundingPayment
-                    )
-                }
-            )
+            contract.on("PositionChanged", (trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment) => {
+                // can't have any awaits inside this event listener function to be logged
+                // can only call one async function as an event handler to do something
+                this.handlePositionChange(trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment)
+            })
         } catch (e) {
             this.log.jerror({
                 event: "ListenPositionChanged:FAILED",
@@ -358,15 +327,15 @@ export class AlgoExecutionService {
                 event: "PositionChanged",
                 params: {
                     ammPair: ammProps.pair,
-                    spotPrice: newSpotPrice,                                            // current price
+                    spotPrice: newSpotPrice, // current price
                     trader: trader,
                     amm: ammAddress,
                     margin: PerpUtils.fromWei(margin),
-                    positionNotional: PerpUtils.fromWei(positionNotional),              // in USDC, absolute value
-                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize),    // traded #contracts (signed), buy or sell obvious
-                    fee: PerpUtils.fromWei(fee),                                        // 10bps fee
-                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter),            // new position size, in #contracts (signed);
-                                                                                        //    if 0: closed position; if equal exchangedPositionSize: opened position
+                    positionNotional: PerpUtils.fromWei(positionNotional), // in USDC, absolute value
+                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize), // traded #contracts (signed), buy or sell obvious
+                    fee: PerpUtils.fromWei(fee), // 10bps fee
+                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter), // new position size, in #contracts (signed);
+                    //    if 0: closed position; if equal exchangedPositionSize: opened position
                     price: ammProps.price,
                 },
             })
@@ -389,12 +358,7 @@ export class AlgoExecutionService {
         }
     }
 
-    private async handleReserveSnapshot(
-        amm: Amm,
-        quoteAssetReserve: BigNumber,
-        baseAssetReserve: BigNumber,
-        timestamp: BigNumber
-    ) {
+    private async handleReserveSnapshot(amm: Amm, quoteAssetReserve: BigNumber, baseAssetReserve: BigNumber, timestamp: BigNumber) {
         if (this.amms.has(amm.address)) {
             const newQuoteAssetReserve = PerpUtils.fromWei(quoteAssetReserve)
             const newBaseAssetReserve = PerpUtils.fromWei(baseAssetReserve)
@@ -491,15 +455,10 @@ export class AlgoExecutionService {
         for (let amm of this.openAmms) {
             if (this.amms.has(amm.address)) {
                 if (totalPositionValue.eq(BIG_ZERO)) {
-                    const quoteBalance = await this.erc20Service.balanceOf(
-                        this.amms.get(amm.address)!.quoteAsset,
-                        this.wallet.address
-                    )
+                    const quoteBalance = await this.erc20Service.balanceOf(this.amms.get(amm.address)!.quoteAsset, this.wallet.address)
                     totalPositionValue = totalPositionValue.add(quoteBalance)
                 }
-                const [position, unrealizedPnl] = await this.positionService.getPerpPositonWithUnrealizedPnl(
-                    amm.address
-                )
+                const [position, unrealizedPnl] = await this.positionService.getPerpPositonWithUnrealizedPnl(amm.address)
                 totalPositionValue = totalPositionValue.add(position.margin).add(unrealizedPnl)
             }
         }
