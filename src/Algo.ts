@@ -37,6 +37,7 @@ export abstract class Algo {
         this.remaingQuantity = this.remaingQuantity.add(this.tradeQuantity())
         this.lastTradeTime = Date.now()
 
+        const tradeRecord = this.buildTradeRecord()
         // TODO: How should the service call the sendChildOrder
         // this.executionService.sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord)
         return this.status
