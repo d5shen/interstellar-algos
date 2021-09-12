@@ -4,7 +4,6 @@ import { BIG_ZERO, Side } from "./Constants"
 import { Log } from "./Log"
 import Big from "big.js"
 import { Amm } from "../types/ethers"
-import { size } from "lodash"
 
 export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
@@ -13,7 +12,7 @@ export abstract class Algo {
 
     private executionService: AlgoExecutionService
     private amm: Amm
-    protected _quantity: Big = BIG_ZERO // the total quantity (either contract or total notional) needs to work on by Algo.
+    protected _quantity: Big // the total quantity (either contract or total notional) needs to work on by Algo.
     protected direction: Side
     protected remaingQuantity: Big
 
@@ -33,8 +32,10 @@ export abstract class Algo {
 
             // TODO: How should the service call the sendChildOrder
             // this.executionService.sendChildOrder(amm: Amm, pair: string, safeGasPrice: BigNumber, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, side: Side, details: TradeRecord)
-            if (this.tradeDirection() === Side.BUY) {
+            if (this.tradeDirection() === this.direction) {
+                this.remaingQuantity = this.remaingQuantity.minus(this.tradeQuantity())
             } else {
+                this.remaingQuantity = this.remaingQuantity.add(this.tradeQuantity())
             }
         }
     }
