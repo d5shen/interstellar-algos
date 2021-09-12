@@ -11,7 +11,6 @@ import { AlgoExecutor } from "../AlgoExecutor"
 export class OrderManager {
     // TODO:
     //   manages orders per Amm
-    //   manage orders lol
     //   watch out for block reorgs...?
     //   remove order out of parentOrders once it's completed.
     //      Maybe we could fire a message event with some topic for the compelted orders with all the child order. In this case, any user (reportig/GUI/risk etc) can record such thing easily and notify the customer
@@ -25,6 +24,7 @@ export class OrderManager {
     // do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         // remove the order which status is completed
+        // can you modify the array within the forEach???
         this.parentOrders.forEach((order, index) => {
             if (order.status == OrderStatus.COMPLETED || order.status == OrderStatus.CANCELED) this.parentOrders.splice(index, 1)
         })

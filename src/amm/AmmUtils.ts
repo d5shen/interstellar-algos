@@ -11,7 +11,6 @@ import { Wallet } from "ethers"
 import Big from "big.js"
 
 export class GasService {
-    private MAX_TOTAL_GAS = BIG_1BIO.mul(BIG_1K).mul(BIG_10) // 10000 gwei
     private ethService: BaseEthService
     private safeGasPrice: BigNumber
     baseMultiplier: Big
@@ -29,9 +28,8 @@ export class GasService {
         let totalMultiplier = multiplier.mul(this.baseMultiplier)
         newGasPrice = newGasPrice.mul(totalMultiplier)
         
-        // cap the total gas
+        // minimum 1 gwei
         newGasPrice = newGasPrice.lt(BIG_1BIO) ? BIG_1BIO : newGasPrice
-        newGasPrice = newGasPrice.gt(this.MAX_TOTAL_GAS) ? this.MAX_TOTAL_GAS : newGasPrice
         return parseUnits(newGasPrice.toFixed(0),0)
     }
 
