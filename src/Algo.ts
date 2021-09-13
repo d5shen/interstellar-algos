@@ -6,15 +6,25 @@ import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
 import { AmmProperties } from "./AlgoExecutionService"
 import Big from "big.js"
+import { REFUSED } from "dns"
+import { dir } from "console"
 
 export enum AlgoType {
-    TWAP
+    TWAP,
 }
 
 export enum AlgoStatus {
     INITIALIZED,
     IN_PROGRESS,
     COMPLETED,
+}
+
+export class AlgoFactory {
+    public static createAlgo(algoExecutor: AlgoExecutor, amm: Amm, pair: string, quanity: Big, direction: Side, algoSettings: any, algoType: AlgoType): Algo {
+        if (algoType == AlgoType.TWAP) {
+            return new Twap(algoExecutor, amm, pair, quanity, direction, algoSettings)
+        }
+    }
 }
 
 export abstract class Algo {
@@ -45,7 +55,7 @@ export abstract class Algo {
         childOrder.notional = this.tradeQuantity()
         // TODO: the Algo calls the sendChildOrder
         //  quoteAssetAmount is in ABSOLUTE NOTIONAL, not size nor # of contracts
-        //  baseAssetAmountLimit is minimum(or maximum) number of contracts before hitting max slippage 
+        //  baseAssetAmountLimit is minimum(or maximum) number of contracts before hitting max slippage
         //  we need the current price (stored in ammProps in the Order object)
         //      size = notional.div(price)
         //      if side == BUY:  baseAssetAmountLimit = size.mul(BIG_ONE.sub(this.maxSlippage())) // if buying FTT, I want to receive AT LEAST size*(1-0.005) contracts

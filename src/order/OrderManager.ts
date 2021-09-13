@@ -1,6 +1,6 @@
 import { Amm } from "../../types/ethers"
 import { AmmProperties } from "../AlgoExecutionService"
-import { Algo, AlgoType, Twap } from "../Algo"
+import { Algo, AlgoFactory, AlgoType, Twap } from "../Algo"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
@@ -43,8 +43,7 @@ export class OrderManager {
 
     // this is called from command line by the user somewhere
     createOrder(direction: Side, quantity: Big, algoType: AlgoType, algoSettings: any): Order {
-        // actualy algo should be created by algo factory accoridng to AlgoType and algoSettings
-        const algo = new Twap(this.algoExecutor, this.amm, this.pair, quantity, direction, algoSettings)
+        const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, this.pair, quantity, direction, algoSettings, algoType)
         const o = new Order(this.amm, this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
