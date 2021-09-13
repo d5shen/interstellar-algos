@@ -3,8 +3,9 @@ import { Amm } from "../../types/ethers"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
-import { Algo, AlgoStatus, Twap } from "../Algo"
+import { Algo, AlgoStatus } from "../Algo"
 import { AmmProperties } from "../AlgoExecutionService"
+import { v4 as uuidv4 } from "uuid"
 
 export enum OrderStatus {
     PENDING,
@@ -29,6 +30,7 @@ export class Order {
 
         // should the Order create the Algo object and or the OrderManager?
         // this.algo = AlgoFactory.getInstance().create(algoType, params...)
+        this.id = this.pair + "." + Side[this.direction] + "." + this.quantity.toString()
         this.algo = algo
     }
 
@@ -37,8 +39,8 @@ export class Order {
         if (this.algo.checkTradeCondition(ammProps)) {
             // hmm should this checkTradeCondition inside of the execute funcion?????
 
-            // a simple Child trade Id could just be PARENT_ID.COUNTER, e.g.  FTT-USDC.1.0 then FTT-USDC.1.1 etc
-            const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size)
+            // child id will parent order id + current child order size + uuid
+            const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size + "." + uuidv4())
             this.childOrders.set(childOrder.tradeId, childOrder)
 
             const algoStatus: AlgoStatus = await this.algo.execute(childOrder)
