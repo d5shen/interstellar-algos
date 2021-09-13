@@ -19,7 +19,7 @@ export class OrderManager {
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
     private readonly parentOrders = new Array<Order>()
 
-    constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string) {}
+    constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm) {}
 
     // do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
@@ -42,9 +42,9 @@ export class OrderManager {
     }
 
     // this is called from command line by the user somewhere
-    createOrder(direction: Side, quantity: Big, algoType: AlgoType, algoSettings: any): Order {
-        const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, this.pair, quantity, direction, algoSettings, algoType)
-        const o = new Order(this.amm, this.pair, direction, quantity, algo)
+    createOrder(pair: string, direction: Side, quantity: Big, algoType: AlgoType, algoSettings: any): Order {
+        const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, pair, quantity, direction, algoSettings, algoType)
+        const o = new Order(this.amm, pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
     }
