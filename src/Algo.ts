@@ -51,7 +51,7 @@ export abstract class Algo {
         //      if side == BUY:  baseAssetAmountLimit = size.mul(BIG_ONE.sub(this.maxSlippage())) // if buying FTT, I want to receive AT LEAST size*(1-0.005) contracts
         //      if side == SELL: baseAssetAmountLimit = size.mul(BIG_ONE.add(this.maxSlippage())) // if selling FTT, I want to give up AT MOST size*(1+0.005) contracts
 
-        //this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit: Big, leverage: Big, childOrder)
+        //await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit: Big, leverage: Big, childOrder)
         return this.status
     }
 

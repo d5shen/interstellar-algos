@@ -46,6 +46,7 @@ export class Order {
             if (algoStatus === AlgoStatus.COMPLETED) {
                 this.status = OrderStatus.COMPLETED
             }
+            // childOrder will be fully populated by this point
         }
         return this.status
     }
