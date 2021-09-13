@@ -38,7 +38,7 @@ export class Order {
             // hmm should this checkTradeCondition inside of the execute funcion?????
 
             // a simple Child trade Id could just be PARENT_ID.COUNTER, e.g.  FTT-USDC.1.0 then FTT-USDC.1.1 etc
-            const childOrder = this.buildTradeRecord("TEST." + this.childOrders.size)
+            const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size)
             this.childOrders.set(childOrder.tradeId, childOrder)
 
             // TODO: shouldn't this be inside the checkTradeCondition() if-statement?
