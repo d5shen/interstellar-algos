@@ -39,6 +39,7 @@ export class OrderManager {
         )
     }
 
+    // this is called from command line by the user somewhere
     createOrder(direction: Side, quantity: Big, algoType: AlgoType, algoSettings: any): Order {
         // should the OrderManager should create the Algo (or Twap) object or should it be created inside new Order()?
         const algo = new Twap(this.algoExecutor, this.amm, this.pair, quantity, direction, algoSettings)
