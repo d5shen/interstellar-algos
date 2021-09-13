@@ -15,7 +15,7 @@ export enum OrderStatus {
 
 export class Order {
     private readonly log = Log.getLogger(Order.name)
-    private id: string 
+    private id: string
     private filled: Big = BIG_ZERO
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
     private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
@@ -41,7 +41,6 @@ export class Order {
             const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size)
             this.childOrders.set(childOrder.tradeId, childOrder)
 
-            // TODO: shouldn't this be inside the checkTradeCondition() if-statement?
             const algoStatus: AlgoStatus = await this.algo.execute(childOrder)
             if (algoStatus === AlgoStatus.COMPLETED) {
                 this.status = OrderStatus.COMPLETED

@@ -5,18 +5,15 @@ import { Amm } from "../types/ethers"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { PerpService } from "./eth/perp/PerpService"
-import { Side } from "./Constants"
+import { BIG_10, Side } from "./Constants"
 import { Wallet } from "ethers"
 import Big from "big.js"
 import { TradeRecord } from "./order/Order"
 
-
 export class AlgoExecutor {
     private readonly log = Log.getLogger(AlgoExecutor.name)
 
-    constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {
-        
-    }
+    constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {}
 
     /*
      *  quoteAssetAmount - notional to trade
@@ -25,6 +22,9 @@ export class AlgoExecutor {
      *  childOrder - pre-instantiated TradeRecord
      */
     public async sendChildOrder(amm: Amm, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+        if (BIG_10.lt(leverage)) {
+            throw new Error(`leverage maximum setting allowed is 10, current setting is ${leverage}`)
+        }
         const safeGasPrice = this.gasService.get()
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)
