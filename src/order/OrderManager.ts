@@ -25,9 +25,10 @@ export class OrderManager {
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         // remove the order which status is completed
         // can you modify the array within the forEach???
-        this.parentOrders.forEach((order, index) => {
-            if (order.status == OrderStatus.COMPLETED || order.status == OrderStatus.CANCELED) this.parentOrders.splice(index, 1)
-        })
+        // do we need this? I think we can just leave it in parentOrders, this Algo bot is for individuals anyways. it won't OOM
+        // this.parentOrders.forEach((order, index) => {
+        //     if (order.status == OrderStatus.COMPLETED || order.status == OrderStatus.CANCELED) this.parentOrders.splice(index, 1)
+        // })
 
         return await Promise.all(
             this.parentOrders
