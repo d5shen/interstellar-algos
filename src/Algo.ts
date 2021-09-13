@@ -20,6 +20,7 @@ export enum AlgoStatus {
 }
 
 export class AlgoFactory {
+    private constructor() {}
     public static createAlgo(algoExecutor: AlgoExecutor, amm: Amm, pair: string, quanity: Big, direction: Side, algoSettings: any, algoType: AlgoType): Algo {
         if (algoType == AlgoType.TWAP) {
             return new Twap(algoExecutor, amm, pair, quanity, direction, algoSettings)
