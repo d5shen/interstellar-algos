@@ -29,10 +29,11 @@ export class Order {
 
         // should the Order create the Algo object and or the OrderManager?
         // this.algo = AlgoFactory.getInstance().create(algoType, params...)
+        this.algo = algo
     }
 
     // called by the OrderManager when it's loop time to check on this parent order
-    async check(ammProps: AmmProperties): Promise<any> {
+    async check(ammProps: AmmProperties): Promise<OrderStatus> {
         if (this.algo.checkTradeCondition(ammProps)) {
             // hmm should this checkTradeCondition inside of the execute funcion?????
 
@@ -46,6 +47,7 @@ export class Order {
                 this.status = OrderStatus.COMPLETED
             }
         }
+        return this.status
     }
 
     get status(): OrderStatus {
