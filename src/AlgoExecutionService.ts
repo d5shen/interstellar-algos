@@ -98,6 +98,7 @@ export class AlgoExecutionService {
             await this.nonceService.sync()
             this.loadConfigs()
 
+            await this.algoExecutor.initialize()
             for (let amm of this.openAmms) {
                 const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
                 const pair = AmmUtils.getAmmPair(ammState)

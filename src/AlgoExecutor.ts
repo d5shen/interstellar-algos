@@ -15,6 +15,31 @@ export class AlgoExecutor {
 
     constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {}
 
+    public async initialize() {
+        
+        // Make sure the quote asset are approved, but only once!
+        // const arbitrageurAddr = this.wallet.address
+        // const clearingHouseAddr = this.systemMetadata.clearingHouseAddr
+
+        // const allowance = await this.erc20Service.allowance(this.quoteAssetAddress, arbitrageurAddr, clearingHouseAddr)
+        // const infiniteAllowance = await this.erc20Service.fromScaled(this.quoteAssetAddress, MaxUint256)
+        // const allowanceThreshold = infiniteAllowance.div(2)
+        // if (allowance.lt(allowanceThreshold)) {
+        //     await this.erc20Service.approve(this.quoteAssetAddress, clearingHouseAddr, infiniteAllowance, this.arbitrageur, {
+        //         gasPrice: this.gasService.get(BIG_0PT1),
+        //     })
+        //     this.log.jinfo({
+        //         event: "SetMaxAllowance",
+        //         params: {
+        //             ammPair: this.ammPair,
+        //             quoteAssetAddr: this.quoteAssetAddress,
+        //             owner: this.arbitrageur.address,
+        //             agent: clearingHouseAddr,
+        //         },
+        //     })
+        // }
+    }
+
     /*
      *  quoteAssetAmount - notional to trade
      *  baseAssetAmountLimit - slippage tolerance
