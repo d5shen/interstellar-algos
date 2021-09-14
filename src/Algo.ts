@@ -40,15 +40,23 @@ export abstract class Algo {
 
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
     async execute(ammProps: AmmProperties, childOrder: TradeRecord): Promise<AlgoStatus> {
-        this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
-        this.lastTradeTime = Date.now()
-        childOrder.notional = this.tradeQuantity()
-        const size = this.tradeQuantity().div(ammProps.price)
+        // TODO JL - HANDLE sendChildOrder catch
 
         // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
         // if selling FTT, I want to give up AT MOST size*(1+slip) contracts
+        childOrder.notional = this.tradeQuantity()
+        const size = this.tradeQuantity().div(ammProps.price)
         const baseAssetAmountLimit = this.direction == Side.BUY ? size.mul(BIG_ONE.sub(this.maxSlippage())) : size.mul(BIG_ONE.add(this.maxSlippage())) 
-        await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit, this.leverage(), childOrder)
+        try {
+            const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit, this.leverage(), childOrder)
+            // only update these on success (no exception thrown)
+            this.lastTradeTime = Date.now()
+            this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())  
+        } catch (e) {
+            // should try again? should do what?
+            // JL TODO
+        }
+            
         return this.status
     }
 

@@ -12,6 +12,7 @@ import { TradeRecord } from "./order/Order"
 
 export class AlgoExecutor {
     private readonly log = Log.getLogger(AlgoExecutor.name)
+    private _awaitingTrade: boolean = false
 
     constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {}
 
@@ -40,6 +41,10 @@ export class AlgoExecutor {
         return
     }
 
+    get awaitingTrade(): boolean {
+        return this._awaitingTrade
+    }
+
     /*
      *  quoteAssetAmount - notional to trade
      *  baseAssetAmountLimit - slippage tolerance
@@ -50,6 +55,8 @@ export class AlgoExecutor {
         if (BIG_10.lt(leverage)) {
             throw new Error(`leverage maximum setting allowed is 10, current setting is ${leverage}`)
         }
+        this._awaitingTrade = true
+
         const safeGasPrice = this.gasService.get()
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)
@@ -79,6 +86,7 @@ export class AlgoExecutor {
                 },
             })
             await nonceService.unlockedSync()
+            this._awaitingTrade = false
             throw e
         } finally {
             release()
@@ -143,6 +151,8 @@ export class AlgoExecutor {
                 },
             })
             throw e
+        } finally {
+            this._awaitingTrade = false
         }
     }
 }

@@ -94,8 +94,8 @@ export class AlgoExecutionService {
         if (!this.initialized) {
             this.systemMetadata = await this.systemMetadataFactory.fetch()
             this.openAmms = await this.perpServiceReadOnly.getAllOpenAmms()
-            await this.gasService.sync()
-            await this.nonceService.sync()
+            this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
+            this.log.jinfo({ event: "GasService:Sync", safeGas: await this.gasService.sync() })
             this.loadConfigs()
 
             await this.algoExecutor.initialize()
@@ -409,11 +409,7 @@ export class AlgoExecutionService {
 
     private async syncNonce(): Promise<void> {
         // attempt to sync the nonce only if we're currently not in the middle of a trade
-        let awaitingTrade = false
-        this.amms.forEach((value, key) => {
-            // check if any orders are in flight before syncing the nonce
-        })
-        if (!awaitingTrade) {
+        if (!this.algoExecutor.awaitingTrade) {
             this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
         }
     }
