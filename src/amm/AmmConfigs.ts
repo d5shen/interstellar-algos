@@ -7,12 +7,10 @@ export const BigKeys = ['PERPFI_LEVERAGE', 'PERPFI_MIN_TRADE_NOTIONAL', 'MAX_SLI
 
 export class AmmConfig {
     PERPFI_LEVERAGE: Big
-    PERPFI_MIN_TRADE_NOTIONAL: Big
     MAX_SLIPPAGE_RATIO: Big
 
     constructor (cfg: any) {
         this.PERPFI_LEVERAGE = this.getOptional(cfg, "PERPFI_LEVERAGE", BIG_10)
-        this.PERPFI_MIN_TRADE_NOTIONAL = this.getOptional(cfg, "PERPFI_MIN_TRADE_NOTIONAL", BIG_10)
         this.MAX_SLIPPAGE_RATIO = this.getOptional(cfg, "MAX_SLIPPAGE_RATIO", BIG_10BP)
     }
     getRequired(cfg: any, field: string) {

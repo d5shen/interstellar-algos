@@ -50,14 +50,14 @@ export abstract class Algo {
     //         - maybe Max Slippage and Leverage can be provided as constructor arguments?
     // TODO: the specific Algo's execute() function should be the one determining slippage
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
-    async execute(childOrder: TradeRecord): Promise<AlgoStatus> {
+    async execute(ammProps: AmmProperties, childOrder: TradeRecord): Promise<AlgoStatus> {
         this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
         this.lastTradeTime = Date.now()
         childOrder.notional = this.tradeQuantity()
         // TODO: the Algo calls the sendChildOrder
         //  quoteAssetAmount is in ABSOLUTE NOTIONAL, not size nor # of contracts
         //  baseAssetAmountLimit is minimum(or maximum) number of contracts before hitting max slippage
-        //  we need the current price (stored in ammProps in the Order object)
+        //  we need the current price (stored in ammProps)
         //      size = notional.div(price)
         //      if side == BUY:  baseAssetAmountLimit = size.mul(BIG_ONE.sub(this.maxSlippage())) // if buying FTT, I want to receive AT LEAST size*(1-0.005) contracts
         //      if side == SELL: baseAssetAmountLimit = size.mul(BIG_ONE.add(this.maxSlippage())) // if selling FTT, I want to give up AT MOST size*(1+0.005) contracts

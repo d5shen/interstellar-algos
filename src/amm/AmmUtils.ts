@@ -156,21 +156,7 @@ export function calculateRegulatedPositionNotional(log: Log, ammConfig: AmmConfi
         })
     }
 
-    if (amount.lt(ammConfig.PERPFI_MIN_TRADE_NOTIONAL)) {
-        amount = BIG_ZERO
-        log.jinfo({
-            event: "PerpFiAmountTooSmall",
-            params: {
-                ammConfig,
-                side,
-                size: +position.size.round(5),
-                openNotional: +position.openNotional.round(2),
-                maxSlippageAmount: +maxSlippageAmount.round(2),
-                maxOpenNotional: +maxOpenNotional.round(2),
-                amount: +amount.round(2),
-            },
-        })
-    } else if (amount.eq(BIG_ZERO)) {
+    if (amount.eq(BIG_ZERO)) {
         log.jinfo({
             event: "AmountZero",
             params: {
