@@ -15,8 +15,7 @@ export class AlgoExecutor {
 
     constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {}
 
-    public async initialize() {
-        
+    public async initialize(): Promise<void> {
         // Make sure the quote asset are approved, but only once!
         // const arbitrageurAddr = this.wallet.address
         // const clearingHouseAddr = this.systemMetadata.clearingHouseAddr
@@ -38,6 +37,7 @@ export class AlgoExecutor {
         //         },
         //     })
         // }
+        return
     }
 
     /*
