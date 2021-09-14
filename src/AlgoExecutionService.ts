@@ -5,6 +5,7 @@ import * as fs from "fs"
 import * as readline from "readline"
 import { pollFrequency, configPath, slowPollFrequency } from "./configs"
 import { AlgoExecutor } from "./AlgoExecutor"
+import { AlgoType } from "./Algo"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
 import { BIG_ZERO, Side } from "./Constants"
 import { Amm } from "../types/ethers"
@@ -22,7 +23,6 @@ import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Wallet } from "ethers"
 import Big from "big.js"
-import { AlgoType } from "./Algo"
 
 export class AmmProperties {
     readonly pair: string
