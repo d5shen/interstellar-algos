@@ -43,7 +43,7 @@ export abstract class Algo {
         this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
         this.lastTradeTime = Date.now()
         childOrder.notional = this.tradeQuantity()
-        const size = this.quantity.div(ammProps.price)
+        const size = this.tradeQuantity().div(ammProps.price)
 
         // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
         // if selling FTT, I want to give up AT MOST size*(1+slip) contracts
