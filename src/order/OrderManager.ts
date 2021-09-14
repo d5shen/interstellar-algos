@@ -31,6 +31,10 @@ export class OrderManager {
         // this.parentOrders.forEach((order, index) => {
         //     if (order.status == OrderStatus.COMPLETED || order.status == OrderStatus.CANCELED) this.parentOrders.splice(index, 1)
         // })
+        this.log.jinfo({
+            event: "ParentOrders",
+            params: this.parentOrders.map<string>((order: Order) => order.toString())
+        })
 
         return await Promise.all(
             this.parentOrders

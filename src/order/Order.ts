@@ -16,10 +16,11 @@ export enum OrderStatus {
 
 export class Order {
     private readonly log = Log.getLogger(Order.name)
+    private static counter = 0
     private id: string
     private filled: Big = BIG_ZERO
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
-    private childOrders: Map<string, TradeRecord> // child order id -> TradeRecord
+    private childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private algo: Algo
 
     constructor(readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
@@ -30,8 +31,9 @@ export class Order {
 
         // should the Order create the Algo object and or the OrderManager?
         // this.algo = AlgoFactory.getInstance().create(algoType, params...)
-        this.id = this.pair + "." + Side[this.direction] + "." + this.quantity.toString()
+        this.id = this.pair + "." + Side[this.direction] + "." + this.quantity.toString() + "." + Order.counter++
         this.algo = algo
+        this._status = OrderStatus.IN_PROGRESS
     }
 
     // called by the OrderManager when it's loop time to check on this parent order
@@ -79,6 +81,10 @@ export class Order {
             side: this.direction,
             timestamp: Date.now(),
         })
+    }
+
+    toString(): string {
+        return `${this.id}:${OrderStatus[this._status]}`
     }
 }
 
