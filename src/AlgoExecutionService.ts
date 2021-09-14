@@ -6,7 +6,7 @@ import * as readline from "readline"
 import { pollFrequency, configPath, slowPollFrequency } from "./configs"
 import { AlgoExecutor } from "./AlgoExecutor"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
-import { BIG_ZERO } from "./Constants"
+import { BIG_ZERO, Side } from "./Constants"
 import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
 import { ERC20Service } from "./eth/ERC20Service"
@@ -22,6 +22,7 @@ import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Wallet } from "ethers"
 import Big from "big.js"
+import { AlgoType } from "./Algo"
 
 export class AmmProperties {
     readonly pair: string
@@ -63,6 +64,7 @@ export class AlgoExecutionService {
     protected initialized = false
     protected lastPrecheck = false
     protected amms = new Map<string, AmmProperties>() // key = AMM Contract Address
+    protected pairs = new Map<string, string>() // key = pair -> address
     protected orderManagers = new Map<string, OrderManager>() // key = AMM Contract Address
     protected configs = new Map<string, AmmConfig>() // key = AMM Pair Name
 
@@ -100,6 +102,7 @@ export class AlgoExecutionService {
                 const pair = AmmUtils.getAmmPair(ammState)
                 const quoteAssetAddress = await amm.quoteAsset()
                 const ammConfig = this.configs.get(pair)
+                this.pairs.set(pair, amm.address)
 
                 if (ammConfig) {
                     let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
@@ -148,9 +151,12 @@ export class AlgoExecutionService {
                 event: "LoadConfigs:OUTPUT",
                 params: { data },
             })
-
             // if not found in the config, then set it back to the old value
             baseGasMultiplier = data.baseGasMultiplier ?? baseGasMultiplier
+            for (const key in data.ammConfigMap) {
+                const config = new AmmConfig(data.ammConfigMap[key])
+                localConfigs.set(key, config)
+            }
 
             // only update the real configs if parsing succeeded
             this.gasService.baseMultiplier = baseGasMultiplier
@@ -239,8 +245,16 @@ export class AlgoExecutionService {
         }
     }
 
-    protected handleInput(input: any): void {
+    protected handleInput(input: string): void {
         console.log("you entered: [" + input.toString().trim() + "]");
+        const tokens = input.split(' ')
+        const pair = tokens[0]
+        const side = Side[tokens[1]] // "BUY" or "SELL"
+        const quantity = Big(tokens[2])
+        const totalTime = parseFloat(tokens[3]) // in seconds
+        const timeInterval = parseFloat(tokens[4]) // in seconds
+        const o = this.orderManagers.get(this.pairs.get(pair))
+        o.createOrder(side, quantity, this.configs.get(pair), AlgoType.TWAP, {TIME: totalTime, INTERVAL: timeInterval})
     }
 
     protected async subscribe(): Promise<void> {
