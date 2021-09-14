@@ -41,13 +41,12 @@ export class Order {
 
             // child id will parent order id + current child order size + uuid
             const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size + "." + uuidv4())
-            this.childOrders.set(childOrder.tradeId, childOrder)
+            this.childOrders.set(childOrder.tradeId, childOrder) // childOrder will be fully populated after algo execute
 
             const algoStatus: AlgoStatus = await this.algo.execute(childOrder)
             if (algoStatus === AlgoStatus.COMPLETED) {
                 this.status = OrderStatus.COMPLETED
             }
-            // childOrder will be fully populated by this point
         }
         return this.status
     }
