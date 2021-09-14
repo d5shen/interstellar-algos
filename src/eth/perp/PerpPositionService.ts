@@ -7,12 +7,7 @@ import Big from "big.js"
 export class PerpPositionService {
     private readonly log = Log.getLogger(PerpPositionService.name)
 
-    constructor(
-        readonly wallet: string,
-        readonly perpService: PerpService
-    ) {
-        
-    }
+    constructor(readonly wallet: string, readonly perpService: PerpService) {}
 
     async getPerpPosition(ammAddress: string): Promise<Position> {
         return await this.perpService.getPersonalPositionWithFundingPayment(ammAddress, this.wallet)
