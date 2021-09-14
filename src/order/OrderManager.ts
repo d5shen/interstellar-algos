@@ -43,7 +43,7 @@ export class OrderManager {
     }
 
     // this is called from command line by the user somewhere
-    createOrder(direction: Side, quantity: Big, ammConfig: AmmConfig, algoType: AlgoType, algoSettings: any): Order {
+    public createOrder(direction: Side, quantity: Big, ammConfig: AmmConfig, algoType: AlgoType, algoSettings: any): Order {
         const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, this.pair, direction, quantity, ammConfig, algoSettings, algoType)
         const o = new Order(this.amm, this.pair, direction, quantity, algo)
         this.parentOrders.push(o)

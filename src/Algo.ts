@@ -34,23 +34,15 @@ export abstract class Algo {
     protected status: AlgoStatus = AlgoStatus.INITIALIZED
 
     protected constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big) {
-        this.remaingQuantity = quantity         // the total quantity (either contract or total notional) needs to work on by Algo.
+        this.remaingQuantity = quantity         // the total notional needs to work on by Algo.
         this.status = AlgoStatus.IN_PROGRESS
     }
 
-    // TODO: below should be from algoExecutor.sendChildOrder or sth similar like that
-    // TODO: maybe execute needs some arguments, at least it needs leverage, childOrder object (TradeRecord)
-    //         - maybe Max Slippage and Leverage can be provided as constructor arguments?
-    // TODO: the specific Algo's execute() function should be the one determining slippage
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
     async execute(ammProps: AmmProperties, childOrder: TradeRecord): Promise<AlgoStatus> {
         this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
         this.lastTradeTime = Date.now()
         childOrder.notional = this.tradeQuantity()
-        // TODO: the Algo calls the sendChildOrder
-        //  quoteAssetAmount is in ABSOLUTE NOTIONAL, not size nor # of contracts
-        //  baseAssetAmountLimit is minimum(or maximum) number of contracts before hitting max slippage
-        //  we need the current price (stored in ammProps)
         const size = this.quantity.div(ammProps.price)
 
         // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
