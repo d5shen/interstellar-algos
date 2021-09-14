@@ -1,13 +1,11 @@
-import * as AmmUtils from "./amm/AmmUtils"
 import { AlgoExecutor } from "./AlgoExecutor"
-import { BIG_100, BIG_1BP, BIG_HALF, BIG_ZERO, Side } from "./Constants"
+import { BIG_ONE, BIG_ZERO, Side } from "./Constants"
 import { Log } from "./Log"
 import { Amm } from "../types/ethers"
 import { TradeRecord } from "./order/Order"
 import { AmmProperties } from "./AlgoExecutionService"
 import Big from "big.js"
-import { REFUSED } from "dns"
-import { dir } from "console"
+import { AmmConfig } from "./amm/AmmConfigs"
 
 export enum AlgoType {
     TWAP,
@@ -21,9 +19,9 @@ export enum AlgoStatus {
 
 export class AlgoFactory {
     private constructor() {}
-    public static createAlgo(algoExecutor: AlgoExecutor, amm: Amm, pair: string, quanity: Big, direction: Side, algoSettings: any, algoType: AlgoType): Algo {
+    public static createAlgo(algoExecutor: AlgoExecutor, amm: Amm, pair: string, direction: Side, quanity: Big, ammConfig: AmmConfig, algoSettings: any, algoType: AlgoType): Algo {
         if (algoType == AlgoType.TWAP) {
-            return new Twap(algoExecutor, amm, pair, quanity, direction, algoSettings)
+            return new Twap(algoExecutor, amm, pair, direction, quanity, ammConfig, algoSettings)
         }
     }
 }
@@ -32,16 +30,11 @@ export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
 
     protected lastTradeTime: number = 0 // initialize the lastTradeTime, epoch
-
-    private _quantity: Big // the total quantity (either contract or total notional) needs to work on by Algo.
-    protected readonly direction: Side
     protected remaingQuantity: Big
     protected status: AlgoStatus = AlgoStatus.INITIALIZED
 
-    protected constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, quantity: Big, direction: Side) {
-        this._quantity = quantity
-        this.remaingQuantity = quantity
-        this.direction = direction
+    protected constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big) {
+        this.remaingQuantity = quantity         // the total quantity (either contract or total notional) needs to work on by Algo.
         this.status = AlgoStatus.IN_PROGRESS
     }
 
@@ -58,16 +51,13 @@ export abstract class Algo {
         //  quoteAssetAmount is in ABSOLUTE NOTIONAL, not size nor # of contracts
         //  baseAssetAmountLimit is minimum(or maximum) number of contracts before hitting max slippage
         //  we need the current price (stored in ammProps)
-        //      size = notional.div(price)
-        //      if side == BUY:  baseAssetAmountLimit = size.mul(BIG_ONE.sub(this.maxSlippage())) // if buying FTT, I want to receive AT LEAST size*(1-0.005) contracts
-        //      if side == SELL: baseAssetAmountLimit = size.mul(BIG_ONE.add(this.maxSlippage())) // if selling FTT, I want to give up AT MOST size*(1+0.005) contracts
+        const size = this.quantity.div(ammProps.price)
 
-        //await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit: Big, leverage: Big, childOrder)
+        // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
+        // if selling FTT, I want to give up AT MOST size*(1+slip) contracts
+        const baseAssetAmountLimit = this.direction == Side.BUY ? size.mul(BIG_ONE.sub(this.maxSlippage())) : size.mul(BIG_ONE.add(this.maxSlippage())) 
+        await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit, this.leverage(), childOrder)
         return this.status
-    }
-
-    protected get quantity(): Big {
-        return this._quantity
     }
 
     // returns true if we should trade (send a child order) this loop cycle
@@ -77,6 +67,7 @@ export abstract class Algo {
     // these can be dynamic depending on the type of Algo
     abstract tradeQuantity(): Big
     abstract maxSlippage(): Big
+    abstract leverage(): Big
 }
 
 export class Twap extends Algo {
@@ -90,8 +81,8 @@ export class Twap extends Algo {
 
     // todo
     //    implement the algoSettings class/interface
-    constructor(algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, quantity: Big, direction: Side, algoSettings: any) {
-        super(algoExecutor, amm, pair, quantity, direction)
+    constructor(algoExecutor: AlgoExecutor, amm: Amm, pair: string, direction: Side, quantity: Big, readonly ammConfig: AmmConfig, algoSettings: any) {
+        super(algoExecutor, amm, pair, direction, quantity)
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL
@@ -130,6 +121,10 @@ export class Twap extends Algo {
     }
 
     maxSlippage(): Big {
-        return BIG_HALF.div(BIG_100) //0.5%
+        return this.ammConfig.MAX_SLIPPAGE_RATIO
+    }
+
+    leverage(): Big {
+        return this.ammConfig.PERPFI_LEVERAGE
     }
 }

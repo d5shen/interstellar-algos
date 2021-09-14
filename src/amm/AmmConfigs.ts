@@ -1,5 +1,5 @@
 import Big from "big.js"
-import { BIG_10, BIG_10BP, BIG_ONE } from "../Constants"
+import { BIG_10, BIG_10BP } from "../Constants"
 
 export const BigTopLevelKeys = ['baseGasMultiplier']
 

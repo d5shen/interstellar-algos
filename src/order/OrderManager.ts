@@ -1,12 +1,13 @@
 import { Amm } from "../../types/ethers"
 import { AmmProperties } from "../AlgoExecutionService"
-import { Algo, AlgoFactory, AlgoType, Twap } from "../Algo"
+import { AlgoFactory, AlgoType } from "../Algo"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
 import { AlgoExecutor } from "../AlgoExecutor"
+import { AmmConfig } from "../amm/AmmConfigs"
 
 export class OrderManager {
     // TODO:
@@ -42,8 +43,8 @@ export class OrderManager {
     }
 
     // this is called from command line by the user somewhere
-    createOrder(direction: Side, quantity: Big, algoType: AlgoType, algoSettings: any): Order {
-        const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, this.pair, quantity, direction, algoSettings, algoType)
+    createOrder(direction: Side, quantity: Big, ammConfig: AmmConfig, algoType: AlgoType, algoSettings: any): Order {
+        const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, this.pair, direction, quantity, ammConfig, algoSettings, algoType)
         const o = new Order(this.amm, this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
