@@ -95,7 +95,7 @@ export class AlgoExecutionService {
             this.systemMetadata = await this.systemMetadataFactory.fetch()
             this.openAmms = await this.perpServiceReadOnly.getAllOpenAmms()
             this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
-            this.log.jinfo({ event: "GasService:Sync", safeGas: await this.gasService.sync() })
+            this.log.jinfo({ event: "GasService:Sync", safeGas: (await this.gasService.sync()).toString() })
             this.loadConfigs()
 
             await this.algoExecutor.initialize()
@@ -405,6 +405,8 @@ export class AlgoExecutionService {
                 o.checkOrders(this.amms.get(a.address))
             }
         })
+        const safeGas = await this.gasService.sync()
+        this.log.jinfo({ event: "SafeGas", params: safeGas.toString() })
     }
 
     private async syncNonce(): Promise<void> {
