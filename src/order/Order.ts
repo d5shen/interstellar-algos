@@ -61,7 +61,7 @@ export class Order {
 
             const algoStatus: AlgoStatus = await this.algo.execute(ammProps, childOrder)
             if (algoStatus === AlgoStatus.COMPLETED) {
-                this.status = OrderStatus.COMPLETED
+                this._status = OrderStatus.COMPLETED
             }
         }
         return this.status
@@ -69,10 +69,6 @@ export class Order {
 
     get status(): OrderStatus {
         return this._status
-    }
-
-    private set status(value: OrderStatus) {
-        this._status = value
     }
 
     private buildTradeRecord(tradeId: string): TradeRecord {
