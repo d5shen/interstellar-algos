@@ -56,6 +56,7 @@ export class AlgoExecutionService {
     protected readonly serverProfile: ServerProfile = new ServerProfile()
     protected readonly systemMetadataFactory: SystemMetadataFactory
 
+    protected stdin: NodeJS.Socket
     protected systemMetadata!: EthMetadata
     protected openAmms!: Amm[]
     protected initialized = false
@@ -105,6 +106,10 @@ export class AlgoExecutionService {
                     this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
                 }
             }
+
+            // set up std in listener
+            this.stdin = process.openStdin()
+            this.stdin.addListener("input", (input) => this.handleInput(input))
 
             // need to use the non-readonly node for subscriptions, in case the RO node dies
             let amms = await this.perpService.getAllOpenAmms()
@@ -223,6 +228,10 @@ export class AlgoExecutionService {
                 },
             })
         }
+    }
+
+    protected handleInput(input: any): void {
+        console.log("you entered: [" + input.toString().trim() + "]");
     }
 
     protected async subscribe(): Promise<void> {

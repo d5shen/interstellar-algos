@@ -13,7 +13,6 @@ export class OrderManager {
     // TODO:
     //   manages orders per Amm
     //   watch out for block reorgs...?
-    //   remove order out of parentOrders once it's completed.
     //      Maybe we could fire a message event with some topic for the compelted orders with all the child order. In this case, any user (reportig/GUI/risk etc) can record such thing easily and notify the customer
 
     private readonly log = Log.getLogger(OrderManager.name)

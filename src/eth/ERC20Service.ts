@@ -5,20 +5,20 @@ import Big from "big.js"
 import { ethers, Wallet } from "ethers"
 import { Service } from "typedi"
 import { ERC20Token } from "../../types/ethers/ERC20Token"
-import { EthService, EthServiceRO } from "./EthService"
+import { EthService, EthServiceReadOnly } from "./EthService"
 import { Log } from "../Log"
 
 @Service()
 export class ERC20Service {
     private readonly log = Log.getLogger(ERC20Service.name)
 
-    constructor(readonly ethService: EthService | null, readonly ethServiceRO: EthServiceRO) {}
+    constructor(readonly ethService: EthService | null, readonly ethServiceReadOnly: EthServiceReadOnly) {}
 
     private createErc20Contract(tokenAddr: string, from?: Wallet): ERC20Token {
         if (from)
             return this.ethService!.createContract<ERC20Token>(tokenAddr, ERC20TokenArtifact.abi, from)
         else
-            return this.ethServiceRO.createContract<ERC20Token>(tokenAddr, ERC20TokenArtifact.abi, from)
+            return this.ethServiceReadOnly.createContract<ERC20Token>(tokenAddr, ERC20TokenArtifact.abi, from)
     }
 
     async allowance(tokenAddr: string, ownerAddr: string, spenderAddr: string): Promise<Big> {
