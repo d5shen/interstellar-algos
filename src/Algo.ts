@@ -52,6 +52,10 @@ export abstract class Algo {
         return this.status
     }
 
+    getRemainingQuantity(): Big {
+        return this.remaingQuantity
+    }
+
     // returns true if we should trade (send a child order) this loop cycle
     // accepts the current state of the Amm (price and reserves)
     abstract checkTradeCondition(ammProps: AmmProperties): boolean

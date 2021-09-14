@@ -36,12 +36,28 @@ export class Order {
 
     // called by the OrderManager when it's loop time to check on this parent order
     async check(ammProps: AmmProperties): Promise<OrderStatus> {
+        this.log.jinfo({
+            event: "Order:check",
+            params: {
+                id: this.id,
+                qty: this.quantity,
+                remaining: this.algo.getRemainingQuantity(),
+                price: ammProps.price
+            }
+        })
         if (this.algo.checkTradeCondition(ammProps)) {
             // hmm should this checkTradeCondition inside of the execute funcion?????
 
             // child id will parent order id + current child order size + uuid
             const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size + "." + uuidv4())
             this.childOrders.set(childOrder.tradeId, childOrder) // childOrder will be fully populated after algo execute
+            this.log.jinfo({
+                event: "Order:trade",
+                params: {
+                    id: this.id,
+                    child: childOrder
+                }
+            })
 
             const algoStatus: AlgoStatus = await this.algo.execute(ammProps, childOrder)
             if (algoStatus === AlgoStatus.COMPLETED) {

@@ -1,0 +1,8 @@
+{
+    "ammConfigMap": {
+        "SUSHI-USDC": {
+            "PERPFI_LEVERAGE": 10,
+            "MAX_SLIPPAGE_RATIO": 0.001
+        }
+    }
+}

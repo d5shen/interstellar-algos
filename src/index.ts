@@ -1,7 +1,7 @@
-import { AlgoExecutionService } from "./AlgoExecutionService"
 import "./init" // this import is required
+import { AlgoExecutionService } from "./AlgoExecutionService"
 
-;(async () => {
+(async () => {
   const algoEx = new AlgoExecutionService()
   await algoEx.startInterval()
 })()
