@@ -2,7 +2,9 @@ import "./init"
 import * as AmmUtils from "./amm/AmmUtils"
 import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
-import { pollFrequency, configPath, slowPollFrequency, statsPath } from "./configs"
+import * as readline from "readline"
+import { pollFrequency, configPath, slowPollFrequency } from "./configs"
+import { AlgoExecutor } from "./AlgoExecutor"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
 import { BIG_ZERO } from "./Constants"
 import { Amm } from "../types/ethers"
@@ -20,7 +22,6 @@ import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Wallet } from "ethers"
 import Big from "big.js"
-import { AlgoExecutor } from "./AlgoExecutor"
 
 export class AmmProperties {
     readonly pair: string
@@ -56,7 +57,7 @@ export class AlgoExecutionService {
     protected readonly serverProfile: ServerProfile = new ServerProfile()
     protected readonly systemMetadataFactory: SystemMetadataFactory
 
-    protected stdin: NodeJS.Socket
+    protected cmd: readline.Interface
     protected systemMetadata!: EthMetadata
     protected openAmms!: Amm[]
     protected initialized = false
@@ -107,10 +108,6 @@ export class AlgoExecutionService {
                 }
             }
 
-            // set up std in listener
-            this.stdin = process.openStdin()
-            this.stdin.addListener("input", (input) => this.handleInput(input))
-
             // need to use the non-readonly node for subscriptions, in case the RO node dies
             let amms = await this.perpService.getAllOpenAmms()
             amms.forEach((amm: Amm) => this.subscribeAmmReserves(amm))
@@ -119,6 +116,18 @@ export class AlgoExecutionService {
             this.initialized = true
         }
         return
+    }
+
+    readInput(): void {
+        // set up std in listener
+        this.cmd = readline.createInterface({input: process.stdin, output: process.stdout})
+        const asyncReadLine = () => {
+            this.cmd.question('ALGO> ', (input: string) => {
+                this.handleInput(input.trim())
+                asyncReadLine()
+            })
+        }
+        asyncReadLine()
     }
 
     protected loadConfigs() {
