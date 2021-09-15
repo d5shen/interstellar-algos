@@ -52,7 +52,12 @@ export abstract class Algo {
             const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit, this.leverage(), childOrder)
             // only update these on success (no exception thrown)
             this.lastTradeTime = Date.now()
-            this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())  
+            this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
+
+            // JL - is this correct? should there be an epsilon?
+            if (this.remaingQuantity.lte(BIG_ZERO)) {
+                this.status = AlgoStatus.COMPLETED 
+            }
         } catch (e) {
             // should try again? should do what?
             // JL TODO

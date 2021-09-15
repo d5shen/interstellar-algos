@@ -63,7 +63,7 @@ export class Order {
             })
 
             const algoStatus: AlgoStatus = await this.algo.execute(ammProps, childOrder)
-            if (algoStatus === AlgoStatus.COMPLETED) {
+            if (algoStatus == AlgoStatus.COMPLETED) {
                 this._status = OrderStatus.COMPLETED
             }
             this.childOrderInFlight = false
