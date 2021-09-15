@@ -15,6 +15,7 @@ import { EthMetadata, SystemMetadataFactory } from "./eth/SystemMetadataFactory"
 import { EthService, EthServiceReadOnly } from "./eth/EthService"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
+import { MaxUint256 } from "@ethersproject/constants"
 import { OrderManager } from "./order/OrderManager"
 import { PerpService } from "./eth/perp/PerpService"
 import { PerpPositionService } from "./eth/perp/PerpPositionService"
@@ -97,8 +98,7 @@ export class AlgoExecutionService {
             this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
             this.log.jinfo({ event: "GasService:Sync", safeGas: (await this.gasService.sync()).toString() })
             this.loadConfigs()
-
-            await this.algoExecutor.initialize()
+            
             for (let amm of this.openAmms) {
                 const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
                 const pair = AmmUtils.getAmmPair(ammState)
@@ -110,6 +110,8 @@ export class AlgoExecutionService {
                     let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
                     this.amms.set(amm.address, ammProps)
                     this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
+                    
+                    await this.approveAllowances(pair, quoteAssetAddress)
                 }
             }
 
@@ -174,6 +176,29 @@ export class AlgoExecutionService {
             })
             throw e
         }
+    }
+
+    async approveAllowances(pair: string, quoteAssetAddress: string): Promise<void> {
+        // Make sure the quote asset are approved, but only once!
+        const clearingHouseAddr = this.systemMetadata.clearingHouseAddr
+        const allowance = await this.erc20Service.allowance(quoteAssetAddress, this.wallet.address, clearingHouseAddr)
+        const infiniteAllowance = await this.erc20Service.fromScaled(quoteAssetAddress, MaxUint256)
+        const allowanceThreshold = infiniteAllowance.div(2)
+        if (allowance.lt(allowanceThreshold)) {
+            await this.erc20Service.approve(quoteAssetAddress, clearingHouseAddr, infiniteAllowance, this.wallet, {
+                gasPrice: this.gasService.get(),
+            })
+            this.log.jinfo({
+                event: "SetMaxAllowance",
+                params: {
+                    pair: pair,
+                    quoteAssetAddress: quoteAssetAddress,
+                    owner: this.wallet.address,
+                    agent: clearingHouseAddr,
+                },
+            })
+        }
+        return
     }
 
     /******************************************

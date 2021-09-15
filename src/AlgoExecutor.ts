@@ -2,44 +2,19 @@ import "./init"
 import * as AmmUtils from "./amm/AmmUtils"
 import * as PerpUtils from "./eth/perp/PerpUtils"
 import { Amm } from "../types/ethers"
+import { BIG_10, Side } from "./Constants"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { PerpService } from "./eth/perp/PerpService"
-import { BIG_10, Side } from "./Constants"
+import { TradeRecord } from "./order/Order"
 import { Wallet } from "ethers"
 import Big from "big.js"
-import { TradeRecord } from "./order/Order"
 
 export class AlgoExecutor {
     private readonly log = Log.getLogger(AlgoExecutor.name)
     private _awaitingTrade: boolean = false
 
     constructor(readonly wallet: Wallet, readonly perpService: PerpService, readonly gasService: GasService) {}
-
-    public async initialize(): Promise<void> {
-        // Make sure the quote asset are approved, but only once!
-        // const arbitrageurAddr = this.wallet.address
-        // const clearingHouseAddr = this.systemMetadata.clearingHouseAddr
-
-        // const allowance = await this.erc20Service.allowance(this.quoteAssetAddress, arbitrageurAddr, clearingHouseAddr)
-        // const infiniteAllowance = await this.erc20Service.fromScaled(this.quoteAssetAddress, MaxUint256)
-        // const allowanceThreshold = infiniteAllowance.div(2)
-        // if (allowance.lt(allowanceThreshold)) {
-        //     await this.erc20Service.approve(this.quoteAssetAddress, clearingHouseAddr, infiniteAllowance, this.arbitrageur, {
-        //         gasPrice: this.gasService.get(BIG_0PT1),
-        //     })
-        //     this.log.jinfo({
-        //         event: "SetMaxAllowance",
-        //         params: {
-        //             ammPair: this.ammPair,
-        //             quoteAssetAddr: this.quoteAssetAddress,
-        //             owner: this.arbitrageur.address,
-        //             agent: clearingHouseAddr,
-        //         },
-        //     })
-        // }
-        return
-    }
 
     get awaitingTrade(): boolean {
         return this._awaitingTrade
