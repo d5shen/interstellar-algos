@@ -4,8 +4,8 @@ import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
 import * as readline from "readline"
 import { pollFrequency, configPath, slowPollFrequency } from "./configs"
-import { AlgoExecutor } from "./AlgoExecutor"
-import { AlgoType } from "./Algo"
+import { AlgoExecutor } from "./algo/AlgoExecutor"
+import { AlgoType } from "./algo/Algo"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
 import { BIG_10, BIG_ZERO, Side } from "./Constants"
 import { Amm } from "../types/ethers"
@@ -207,6 +207,7 @@ export class AlgoExecutionService {
 
     async start(): Promise<void> {
         await this.initialize()
+        await this.subscribe()
         await this.checkOrders()
     }
 
@@ -217,6 +218,7 @@ export class AlgoExecutionService {
             this.log.error(e)
             process.exit(1)
         }
+        await this.subscribe()
         await this.printPositions()
         await this.checkOrders()
         await Promise.all([this.startPrechecks(), this.startExecution(), this.startSlowPolls()])
@@ -288,6 +290,62 @@ export class AlgoExecutionService {
             this.log.jerror({
                 "Reason": "Bad Input",
                 "Error": e,
+            })
+        }
+    }
+    
+    private async subscribe(): Promise<void> {
+        const contract = await this.perpService.createClearingHouse()
+        this.log.jinfo({ event: "Contract", params: { address: contract.address }})
+
+        try {
+            contract.on("PositionChanged", 
+                (trader, ammAddress, margin, positionNotional, exchangedPositionSize, 
+                    fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, 
+                    liquidationPenalty, spotPrice, fundingPayment) => {
+
+                // can't have any awaits inside this event listener function to be logged
+                // can only call one async function as an event handler to do something
+                this.handlePositionChange(trader, ammAddress, margin, positionNotional, exchangedPositionSize, 
+                    fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, 
+                    liquidationPenalty, spotPrice, fundingPayment)
+            })
+        } catch (e) {
+            this.log.jerror({
+                event: "ListenPositionChanged:FAILED",
+                params: {
+                    reason: e.toString(),
+                    stackTrace: e.stack,
+                },
+            })
+        }
+    }
+    
+    private async handlePositionChange(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, 
+        fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, 
+        liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): Promise<void> {
+
+        // spotPrice is the currentPrice up to at least 6 dps
+        let newSpotPrice = PerpUtils.fromWei(spotPrice)
+
+        // only print relevant PositionChanged events
+        if (this.amms.has(ammAddress)) {
+            let ammProps = this.amms.get(ammAddress)!
+            this.log.jinfo({
+                event: "PositionChanged",
+                params: {
+                    ammPair: ammProps.pair,
+                    spotPrice: newSpotPrice,                                          // current price 
+                    trader: trader,
+                    amm: ammAddress, 
+                    margin: PerpUtils.fromWei(margin),
+                    positionNotional: PerpUtils.fromWei(positionNotional),            // in USDC, absolute value
+                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize),  // traded #contracts (signed), buy or sell obvious
+                    fee: PerpUtils.fromWei(fee),                                      // 10bps fee
+                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter),          // new position size, in #contracts (signed); 
+                                                                                        //    if 0: closed position; if equal exchangedPositionSize: opened position
+                    price: newSpotPrice,
+                },
             })
         }
     }

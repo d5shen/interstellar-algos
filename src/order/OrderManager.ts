@@ -1,12 +1,12 @@
 import { Amm } from "../../types/ethers"
 import { AmmProperties } from "../AlgoExecutionService"
-import { AlgoFactory, AlgoType } from "../Algo"
+import { AlgoFactory, AlgoType } from "../algo/Algo"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
-import { AlgoExecutor } from "../AlgoExecutor"
+import { AlgoExecutor } from "../algo/AlgoExecutor"
 import { AmmConfig } from "../amm/AmmConfigs"
 
 export class OrderManager {

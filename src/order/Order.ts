@@ -3,7 +3,7 @@ import { Amm } from "../../types/ethers"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
-import { Algo, AlgoStatus } from "../Algo"
+import { Algo, AlgoStatus } from "../algo/Algo"
 import { AmmProperties } from "../AlgoExecutionService"
 
 export enum OrderStatus {
