@@ -44,9 +44,10 @@ export abstract class Algo {
 
         // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
         // if selling FTT, I want to give up AT MOST size*(1+slip) contracts
-        childOrder.notional = this.tradeQuantity()
         const size = this.tradeQuantity().div(ammProps.price)
         const baseAssetAmountLimit = this.direction == Side.BUY ? size.mul(BIG_ONE.sub(this.maxSlippage())) : size.mul(BIG_ONE.add(this.maxSlippage())) 
+        childOrder.notional = this.tradeQuantity()
+        childOrder.size = size
         try {
             const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, this.tradeQuantity(), baseAssetAmountLimit, this.leverage(), childOrder)
             // only update these on success (no exception thrown)
