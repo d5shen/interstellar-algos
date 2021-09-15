@@ -45,7 +45,6 @@ export class AmmProperties {
 export class AlgoExecutionService {
     protected readonly log = Log.getLogger(AlgoExecutionService.name)
     protected readonly wallet: Wallet
-    protected readonly walletReadOnly: Wallet
     protected readonly ethService: EthService
     protected readonly ethServiceReadOnly: EthServiceReadOnly
     protected readonly perpService: PerpService
@@ -77,13 +76,12 @@ export class AlgoExecutionService {
         this.perpService = new PerpService(this.ethService, this.systemMetadataFactory)
 
         this.ethServiceReadOnly = new EthServiceReadOnly(this.serverProfile)
-        this.walletReadOnly = this.ethServiceReadOnly.privateKeyToWallet(this.serverProfile.walletPrivateKey)
         this.perpServiceReadOnly = new PerpService(this.ethServiceReadOnly, this.systemMetadataFactory)
 
         this.erc20Service = new ERC20Service(this.ethService, this.ethServiceReadOnly)
 
         this.gasService = new GasService(this.ethServiceReadOnly)
-        this.nonceService = NonceService.getInstance(this.walletReadOnly)
+        this.nonceService = NonceService.getInstance(this.wallet)
 
         this.positionService = new PerpPositionService(this.wallet.address, this.perpService)
         this.algoExecutor = new AlgoExecutor(this.wallet, this.perpService, this.gasService)
