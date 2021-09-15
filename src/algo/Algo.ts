@@ -4,11 +4,11 @@ import { AmmConfig } from "../amm/AmmConfigs"
 import { AmmProperties } from "../AlgoExecutionService"
 import { BIG_ONE, BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
+import { Pov } from "./impl/Pov"
 import { Queue } from "../DataStructure"
 import { TradeRecord } from "../order/Order"
 import { Twap } from "./impl/Twap"
 import Big from "big.js"
-import { Pov } from "./impl/Pov"
 
 export enum AlgoType {
     POV,
