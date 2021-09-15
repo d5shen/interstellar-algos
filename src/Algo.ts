@@ -102,7 +102,7 @@ export class Twap extends Algo {
     }
 
     checkTradeCondition(ammProps: AmmProperties): boolean {
-        let sinceLastTradeTimeInSeconds = (Date.now() - this.lastTradeTime) / 1000
+        let sinceLastTradeTimeInSeconds = this.lastTradeTime == 0 ? this.interval : (Date.now() - this.lastTradeTime) / 1000
         this.timeElapse = (Date.now() - this.startOfAlgo) / 1000
         if (this.timeElapse > this.time) {
             this.status = AlgoStatus.COMPLETED
