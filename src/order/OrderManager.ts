@@ -24,7 +24,7 @@ export class OrderManager {
     // do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         this.log.jinfo({
-            event: "ParentOrders",
+            event: this.pair + ":ParentOrders",
             params: this.parentOrders.map<string>((order: Order) => order.toString())
         })
 
