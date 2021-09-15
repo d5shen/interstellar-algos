@@ -5,7 +5,6 @@ import { Log } from "../Log"
 import Big from "big.js"
 import { Algo, AlgoStatus } from "../Algo"
 import { AmmProperties } from "../AlgoExecutionService"
-import { v4 as uuidv4 } from "uuid"
 
 export enum OrderStatus {
     PENDING,
@@ -18,21 +17,13 @@ export class Order {
     private readonly log = Log.getLogger(Order.name)
     private static counter = 0
     private id: string
-    private filled: Big = BIG_ZERO
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
     private childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private childOrderInFlight: boolean = false
     private algo: Algo
 
-    constructor(readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
-        // TODO
-        // pair, quantity and direction should be pass from Order to Algo
-        // the design should be: order tell the algo (either TWAP, VWAP) hoow much quanity and direction to work on
-        // id should be pair.COUNTER or just a uuid
-
-        // should the Order create the Algo object and or the OrderManager?
-        // this.algo = AlgoFactory.getInstance().create(algoType, params...)
-        this.id = this.pair + "." + Side[this.direction] + "." + this.quantity.toString() + "." + Order.counter++
+    constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
+        this.id = this.pair + "." + Side[this.direction] + "." + Order.counter++
         this.algo = algo
         this._status = OrderStatus.IN_PROGRESS
     }
@@ -40,11 +31,12 @@ export class Order {
     // called by the OrderManager when it's loop time to check on this parent order
     async check(ammProps: AmmProperties): Promise<OrderStatus> {
         this.log.jinfo({
-            event: "Order:check",
+            event: "Order:Check",
             params: {
                 id: this.id,
-                qty: this.quantity,
-                remaining: this.algo.getRemainingQuantity(),
+                quantity: this.quantity,
+                filled: this.algo.filledQuantity,
+                remaining: this.algo.remainingQuantity,
                 price: ammProps.price,
             },
         })
@@ -53,10 +45,10 @@ export class Order {
             this.childOrderInFlight = true
 
             // child id will parent order id + current child order size + uuid
-            const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size + "." + uuidv4())
+            const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size)
             this.childOrders.set(childOrder.tradeId, childOrder) // childOrder will be fully populated after algo execute
             this.log.jinfo({
-                event: "Order:trade",
+                event: "Order:Trade",
                 params: {
                     id: this.id,
                     child: childOrder,
@@ -80,7 +72,6 @@ export class Order {
     }
 
     private buildTradeRecord(tradeId: string): TradeRecord {
-        // TODO: implement this function
         return new TradeRecord({
             tradeId: tradeId,
             pair: this.pair,

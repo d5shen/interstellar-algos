@@ -101,6 +101,7 @@ export class AlgoExecutor {
             childOrder.ppPositionChangedLog = positionChangedLog
             childOrder.ppExecSize = positionChangedLog.exchangedPositionSize
             childOrder.ppExecPrice = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
+            childOrder.slippage = childOrder.ppExecPrice.sub(childOrder.price).div(childOrder.price)
             childOrder.onSuccess()
 
             // TODO:

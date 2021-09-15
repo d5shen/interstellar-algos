@@ -23,14 +23,6 @@ export class OrderManager {
 
     // do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
-        // remove the order which status is completed
-        // DSG:can you modify the array within the forEach???    JL: Yes, we can modify the array within forEarch.
-
-        // DSG: do we need this? I think we can just leave it in parentOrders, this Algo bot is for individuals anyways. it won't OOM
-        //      JL: we can leave it for now to test the pipeline first. Once all the things are working properly, we could include this feature as enhancement.
-        // this.parentOrders.forEach((order, index) => {
-        //     if (order.status == OrderStatus.COMPLETED || order.status == OrderStatus.CANCELED) this.parentOrders.splice(index, 1)
-        // })
         this.log.jinfo({
             event: "ParentOrders",
             params: this.parentOrders.map<string>((order: Order) => order.toString())
@@ -48,7 +40,7 @@ export class OrderManager {
     // this is called from command line by the user somewhere
     public createOrder(direction: Side, quantity: Big, ammConfig: AmmConfig, algoType: AlgoType, algoSettings: any): Order {
         const algo = AlgoFactory.createAlgo(this.algoExecutor, this.amm, this.pair, direction, quantity, ammConfig, algoSettings, algoType)
-        const o = new Order(this.amm, this.pair, direction, quantity, algo)
+        const o = new Order(this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
     }

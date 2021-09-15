@@ -5,7 +5,7 @@ import Big from "big.js"
  *  Global Configs, not pair-specific
  *********************************************************/
 
-export const pollFrequency = 10 // in seconds
+export const pollFrequency = 20 // in seconds
 export const slowPollFrequency = 60 // in seconds
 export const perpfiFee = Big(0.001) // default 0.1%
 

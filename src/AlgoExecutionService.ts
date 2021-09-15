@@ -7,7 +7,7 @@ import { pollFrequency, configPath, slowPollFrequency } from "./configs"
 import { AlgoExecutor } from "./AlgoExecutor"
 import { AlgoType } from "./Algo"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
-import { BIG_ZERO, Side } from "./Constants"
+import { BIG_10, BIG_ZERO, Side } from "./Constants"
 import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
 import { ERC20Service } from "./eth/ERC20Service"
@@ -101,16 +101,16 @@ export class AlgoExecutionService {
                 const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
                 const pair = AmmUtils.getAmmPair(ammState)
                 const quoteAssetAddress = await amm.quoteAsset()
-                const ammConfig = this.configs.get(pair)
                 this.pairs.set(pair, amm.address)
-
-                if (ammConfig) {
-                    let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
-                    this.amms.set(amm.address, ammProps)
-                    this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
-                    
-                    await this.approveAllowances(pair, quoteAssetAddress)
+                if (!this.configs.has(pair)) {
+                    this.configs.set(pair, new AmmConfig({}))
                 }
+
+                let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
+                this.amms.set(amm.address, ammProps)
+                this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
+                
+                await this.approveAllowances(pair, quoteAssetAddress)
             }
 
             // need to use the non-readonly node for subscriptions, in case the RO node dies
@@ -136,7 +136,6 @@ export class AlgoExecutionService {
     }
 
     protected loadConfigs() {
-        // we do not want this to succeed in replacing ANY configs if there's even one problem
         try {
             let baseGasMultiplier = this.gasService.baseMultiplier
 
@@ -239,12 +238,7 @@ export class AlgoExecutionService {
             await this.ethServiceReadOnly.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
         }, 1000 * slowPollFrequency) // slower than others
     }
-
-    async listen(): Promise<void> {
-        await this.initialize()
-        await this.subscribe()
-    }
-
+    
     /******************************************
      **
      **  End public top-level script functions
@@ -255,9 +249,6 @@ export class AlgoExecutionService {
         try {
             this.log.jinfo({ event: "ConfigChanged", params: { curr } })
             this.loadConfigs()
-            this.amms.forEach((value: AmmProperties, key: string) => {
-                // do something with new configs
-            })
         } catch (e) {
             this.log.jerror({
                 event: "ConfigChanged:FAILED",
@@ -270,16 +261,36 @@ export class AlgoExecutionService {
         }
     }
 
+    // DGS - TODO - generalize inputs and AlgoSettings
     protected handleInput(input: string): void {
-        console.log("you entered: [" + input.toString().trim() + "]");
-        const tokens = input.split(' ')
-        const pair = tokens[0]
-        const side = Side[tokens[1]] // "BUY" or "SELL"
-        const quantity = Big(tokens[2])
-        const totalTime = parseFloat(tokens[3]) // in seconds
-        const timeInterval = parseFloat(tokens[4]) // in seconds
-        const o = this.orderManagers.get(this.pairs.get(pair))
-        o.createOrder(side, quantity, this.configs.get(pair), AlgoType.TWAP, {TIME: totalTime, INTERVAL: timeInterval})
+        this.log.jinfo({input});
+        try {
+            const tokens = input.split(' ')
+            const algoType = AlgoType[tokens[0]] // "TWAP" only for now
+            const pair = tokens[1]
+            const side = Side[tokens[2]] // "BUY" or "SELL"
+            const quantity = Big(tokens[3])
+            const totalMinutes = parseInt(tokens[4]) // in minutes, must be integer
+            const interval = parseInt(tokens[5]) // in minutes, must be integer
+            // TODO - user input error handling
+            if (interval >= totalMinutes) {
+                throw Error("Intervals cannot be less than Total Time")
+            } else if (quantity.lt(BIG_10)) {
+                throw Error("Notional cannot be less than 10 USDC")
+            } 
+
+            // convert minutes to number of loop cycles - assume that pollFrequency divides into 60
+            const totalCycles = Math.floor(60 * totalMinutes / pollFrequency)
+            const intervalCycles = Math.floor(60 * interval / pollFrequency)
+
+            const o = this.orderManagers.get(this.pairs.get(pair))
+            o.createOrder(side, quantity, this.configs.get(pair), algoType, {TIME: totalCycles, INTERVAL: intervalCycles})
+        } catch (e) {
+            this.log.jerror({
+                "Reason": "Bad Input",
+                "Error": e,
+            })
+        }
     }
 
     protected async subscribe(): Promise<void> {
