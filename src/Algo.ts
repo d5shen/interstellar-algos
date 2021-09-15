@@ -54,7 +54,7 @@ export abstract class Algo {
             this.lastTradeTime = Date.now()
             this.remaingQuantity = this.remaingQuantity.sub(this.tradeQuantity())
 
-            // JL - is this correct? should there be an epsilon?
+            // JL - is this correct?
             if (this.remaingQuantity.lte(BIG_ZERO)) {
                 this.status = AlgoStatus.COMPLETED 
             }

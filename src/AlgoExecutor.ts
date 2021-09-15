@@ -60,9 +60,9 @@ export class AlgoExecutor {
         const safeGasPrice = this.gasService.get()
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)
-        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: childOrder })
+        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: {pair: pair, side: Side[side], quoteAssetAmount: quoteAssetAmount} })
         const release = await nonceService.mutex.acquire()
-        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: childOrder })
+        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: {pair: pair, side: Side[side], quoteAssetAmount: quoteAssetAmount} })
         let tx: any
         try {
             childOrder.ppGasPx = Big(safeGasPrice.toString())
@@ -82,6 +82,8 @@ export class AlgoExecutor {
                 params: {
                     etype: "failed to create tx",
                     ammPair: pair,
+                    nonce: nonceService.get(),
+                    err: e,
                     details: childOrder,
                 },
             })
