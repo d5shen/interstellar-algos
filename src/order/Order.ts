@@ -21,6 +21,7 @@ export class Order {
     private filled: Big = BIG_ZERO
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
     private childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
+    private childOrderInFlight: boolean = false
     private algo: Algo
 
     constructor(readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
@@ -47,8 +48,8 @@ export class Order {
                 price: ammProps.price
             }
         })
-        if (this.algo.checkTradeCondition(ammProps)) {
-            // hmm should this checkTradeCondition inside of the execute funcion?????
+        if (!this.childOrderInFlight && this.algo.checkTradeCondition(ammProps)) {
+            this.childOrderInFlight = true
 
             // child id will parent order id + current child order size + uuid
             const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size + "." + uuidv4())
@@ -65,6 +66,7 @@ export class Order {
             if (algoStatus === AlgoStatus.COMPLETED) {
                 this._status = OrderStatus.COMPLETED
             }
+            this.childOrderInFlight = false
         }
         return this.status
     }
