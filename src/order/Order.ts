@@ -45,9 +45,10 @@ export class Order {
                 id: this.id,
                 qty: this.quantity,
                 remaining: this.algo.getRemainingQuantity(),
-                price: ammProps.price
-            }
+                price: ammProps.price,
+            },
         })
+
         if (!this.childOrderInFlight && this.algo.checkTradeCondition(ammProps)) {
             this.childOrderInFlight = true
 
@@ -58,16 +59,19 @@ export class Order {
                 event: "Order:trade",
                 params: {
                     id: this.id,
-                    child: childOrder
-                }
+                    child: childOrder,
+                },
             })
 
-            const algoStatus: AlgoStatus = await this.algo.execute(ammProps, childOrder)
-            if (algoStatus == AlgoStatus.COMPLETED) {
-                this._status = OrderStatus.COMPLETED
-            }
+            await this.algo.execute(ammProps, childOrder)
+
             this.childOrderInFlight = false
         }
+
+        if (this.algo.status == AlgoStatus.COMPLETED) {
+            this._status = OrderStatus.COMPLETED
+        }
+
         return this.status
     }
 
