@@ -113,18 +113,14 @@ export class Twap extends Algo {
         }
 
         let tradeQuantity = BIG_ZERO
-        while (this.tradeSchedule.size() > 0) {
-            if (this.tradeSchedule.peek().getFirst() <= this.timeElapse) {
-                let timeToTrade = this.tradeSchedule.pop()
-                tradeQuantity = tradeQuantity.add(timeToTrade.getSecond())
-            }
+        while (this.tradeSchedule.peek().getFirst() <= this.timeElapse) {
+            let timeToTrade = this.tradeSchedule.pop()
+            tradeQuantity = tradeQuantity.add(timeToTrade.getSecond())
         }
 
-        while (this.failTrades.size() > 0) {
-            if (this.failTrades.peek().getFirst() <= this.timeElapse) {
-                let timeToTrade = this.failTrades.pop()
-                tradeQuantity = tradeQuantity.add(timeToTrade.getSecond())
-            }
+        while (this.failTrades.peek().getFirst() <= this.timeElapse) {
+            let timeToTrade = this.failTrades.pop()
+            tradeQuantity = tradeQuantity.add(timeToTrade.getSecond())
         }
 
         this.tradeTimeQuantity = new Pair<number, Big>(this.timeElapse, tradeQuantity)
