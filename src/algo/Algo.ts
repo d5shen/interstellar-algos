@@ -68,6 +68,9 @@ export abstract class Algo {
         try {
             const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, tradeQuantity, baseAssetAmountLimit, this.leverage(), childOrder)
             this._remainingQuantity = this._remainingQuantity.sub(tradeQuantity)
+            if (this._remainingQuantity.eq(BIG_ZERO)) {
+                this._status = AlgoStatus.COMPLETED
+            }
             // only update these on success (no exception thrown)
         } catch (e) {
             this.failTrades.push(tradeQuantity)
