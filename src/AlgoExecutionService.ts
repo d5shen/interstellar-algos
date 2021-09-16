@@ -96,7 +96,7 @@ export class AlgoExecutionService {
             this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
             this.log.jinfo({ event: "GasService:Sync", safeGas: (await this.gasService.sync()).toString() })
             this.loadConfigs()
-            
+
             for (let amm of this.openAmms) {
                 const ammState = await this.perpServiceReadOnly.getAmmStates(amm.address)
                 const pair = AmmUtils.getAmmPair(ammState)
@@ -109,7 +109,7 @@ export class AlgoExecutionService {
                 let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
                 this.amms.set(amm.address, ammProps)
                 this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
-                
+
                 await this.approveAllowances(pair, quoteAssetAddress)
             }
 
@@ -125,9 +125,9 @@ export class AlgoExecutionService {
 
     readInput(): void {
         // set up std in listener
-        this.cmd = readline.createInterface({input: process.stdin, output: process.stdout})
+        this.cmd = readline.createInterface({ input: process.stdin, output: process.stdout })
         const asyncReadLine = () => {
-            this.cmd.question('ALGO> ', (input: string) => {
+            this.cmd.question("ALGO> ", (input: string) => {
                 this.handleInput(input.trim())
                 asyncReadLine()
             })
@@ -239,7 +239,7 @@ export class AlgoExecutionService {
             await this.ethServiceReadOnly.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
         }, 1000 * slowPollFrequency) // slower than others
     }
-    
+
     /******************************************
      **
      **  End public top-level script functions
@@ -264,9 +264,9 @@ export class AlgoExecutionService {
 
     // DGS - TODO - generalize inputs and AlgoSettings
     protected handleInput(input: string): void {
-        this.log.jinfo({input});
+        this.log.jinfo({ input })
         try {
-            const tokens = input.split(' ')
+            const tokens = input.split(" ")
             const algoType = AlgoType[tokens[0]] // "TWAP" only for now
             const pair = tokens[1]
             const side = Side[tokens[2]] // "BUY" or "SELL"
@@ -278,37 +278,31 @@ export class AlgoExecutionService {
                 throw Error("Intervals cannot be more than half the Total Time - you must have at least two iterations")
             } else if (quantity.lt(BIG_10)) {
                 throw Error("Notional cannot be less than 10 USDC")
-            } 
+            }
 
             // convert minutes to number of loop cycles - assume that pollFrequency divides into 60
-            const totalCycles = Math.floor(60 * totalMinutes / pollFrequency)
-            const intervalCycles = Math.floor(60 * interval / pollFrequency)
+            const totalCycles = Math.floor((60 * totalMinutes) / pollFrequency)
+            const intervalCycles = Math.floor((60 * interval) / pollFrequency)
 
             const o = this.orderManagers.get(this.pairs.get(pair))
-            o.createOrder(side, quantity, this.configs.get(pair), algoType, {TIME: totalCycles, INTERVAL: intervalCycles})
+            o.createOrder(side, quantity, this.configs.get(pair), algoType, { TIME: totalCycles, INTERVAL: intervalCycles })
         } catch (e) {
             this.log.jerror({
-                "Reason": "Bad Input",
-                "Error": e,
+                Reason: "Bad Input",
+                Error: e,
             })
         }
     }
-    
+
     private async subscribe(): Promise<void> {
         const contract = await this.perpService.createClearingHouse()
-        this.log.jinfo({ event: "Contract", params: { address: contract.address }})
+        this.log.jinfo({ event: "Contract", params: { address: contract.address } })
 
         try {
-            contract.on("PositionChanged", 
-                (trader, ammAddress, margin, positionNotional, exchangedPositionSize, 
-                    fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, 
-                    liquidationPenalty, spotPrice, fundingPayment) => {
-
+            contract.on("PositionChanged", (trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment) => {
                 // can't have any awaits inside this event listener function to be logged
                 // can only call one async function as an event handler to do something
-                this.handlePositionChange(trader, ammAddress, margin, positionNotional, exchangedPositionSize, 
-                    fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, 
-                    liquidationPenalty, spotPrice, fundingPayment)
+                this.handlePositionChange(trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment)
             })
         } catch (e) {
             this.log.jerror({
@@ -320,11 +314,22 @@ export class AlgoExecutionService {
             })
         }
     }
-    
-    private async handlePositionChange(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, 
-        fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, 
-        liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): Promise<void> {
 
+    private async handlePositionChange(
+        trader: string,
+        ammAddress: string,
+        margin: BigNumber,
+        positionNotional: BigNumber,
+        exchangedPositionSize: BigNumber,
+        fee: BigNumber,
+        positionSizeAfter: BigNumber,
+        realizedPnl: BigNumber,
+        unrealizedPnlAfter: BigNumber,
+        badDebt: BigNumber,
+        liquidationPenalty: BigNumber,
+        spotPrice: BigNumber,
+        fundingPayment: BigNumber
+    ): Promise<void> {
         // spotPrice is the currentPrice up to at least 6 dps
         let newSpotPrice = PerpUtils.fromWei(spotPrice)
 
@@ -335,15 +340,15 @@ export class AlgoExecutionService {
                 event: "PositionChanged",
                 params: {
                     ammPair: ammProps.pair,
-                    spotPrice: newSpotPrice,                                          // current price 
+                    spotPrice: newSpotPrice, // current price
                     trader: trader,
-                    amm: ammAddress, 
+                    amm: ammAddress,
                     margin: PerpUtils.fromWei(margin),
-                    positionNotional: PerpUtils.fromWei(positionNotional),            // in USDC, absolute value
-                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize),  // traded #contracts (signed), buy or sell obvious
-                    fee: PerpUtils.fromWei(fee),                                      // 10bps fee
-                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter),          // new position size, in #contracts (signed); 
-                                                                                        //    if 0: closed position; if equal exchangedPositionSize: opened position
+                    positionNotional: PerpUtils.fromWei(positionNotional), // in USDC, absolute value
+                    exchangedPositionSize: PerpUtils.fromWei(exchangedPositionSize), // traded #contracts (signed), buy or sell obvious
+                    fee: PerpUtils.fromWei(fee), // 10bps fee
+                    positionSizeAfter: PerpUtils.fromWei(positionSizeAfter), // new position size, in #contracts (signed);
+                    //    if 0: closed position; if equal exchangedPositionSize: opened position
                     price: newSpotPrice,
                 },
             })

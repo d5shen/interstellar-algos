@@ -4,16 +4,9 @@ import { AmmConfig } from "../amm/AmmConfigs"
 import { AmmProperties } from "../AlgoExecutionService"
 import { BIG_ONE, BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
-import { Pov } from "./impl/Pov"
 import { Queue } from "../DataStructure"
 import { TradeRecord } from "../order/Order"
-import { Twap } from "./impl/Twap"
 import Big from "big.js"
-
-export enum AlgoType {
-    POV,
-    TWAP,
-}
 
 export enum AlgoUrgency {
     LOW,
@@ -25,17 +18,6 @@ export enum AlgoStatus {
     INITIALIZED,
     IN_PROGRESS,
     COMPLETED,
-}
-
-export class AlgoFactory {
-    private constructor() {}
-    public static createAlgo(algoExecutor: AlgoExecutor, amm: Amm, pair: string, direction: Side, quanity: Big, ammConfig: AmmConfig, algoSettings: any, algoType: AlgoType): Algo {
-        if (algoType == AlgoType.TWAP) {
-            return new Twap(algoExecutor, amm, pair, direction, quanity, ammConfig, algoSettings)
-        } else if (algoType == AlgoType.POV) {
-            return new Pov(algoExecutor, amm, pair, direction, quanity, ammConfig, algoSettings)
-        }
-    }
 }
 
 export abstract class Algo {
