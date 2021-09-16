@@ -18,6 +18,7 @@ export enum AlgoStatus {
     INITIALIZED,
     IN_PROGRESS,
     COMPLETED,
+    FAILED,
 }
 
 export abstract class Algo {

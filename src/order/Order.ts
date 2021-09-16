@@ -64,6 +64,10 @@ export class Order {
             this._status = OrderStatus.COMPLETED
         }
 
+        if (this.algo.status == AlgoStatus.FAILED) {
+            this._status = OrderStatus.CANCELED
+        }
+
         return this.status
     }
 
