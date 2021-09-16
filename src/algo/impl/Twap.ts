@@ -3,7 +3,7 @@ import { AlgoExecutor } from "../AlgoExecutor"
 import { Amm } from "../../../types/ethers"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
-import { BIG_ZERO, Side } from "../../Constants"
+import { BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
 import { Log } from "../../Log"
 import { Pair, Stack } from "../../DataStructure"
 import Big from "big.js"
@@ -64,7 +64,7 @@ export class Twap extends Algo {
 
     // JL - TODO handle minimum trade notional 10 USDC and adjust schedule accordingly
     private calcTradeSchedule(): Stack<Pair<number, Big>> {
-        let tradeTimes = Math.floor(this.time / this.interval)
+        let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.quantity.div(MIN_TRADE_QUANTITY).toString())))
 
         const tradeNotional = this.quantity.div(Big(tradeTimes))
         const lastTradeNotional = this.quantity.minus(tradeNotional.mul(Big(tradeTimes - 1)))
