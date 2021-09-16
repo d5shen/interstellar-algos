@@ -1,6 +1,6 @@
 import { Amm } from "../../types/ethers"
 import { AmmProperties } from "../AlgoExecutionService"
-import { AlgoFactory, AlgoType } from "../algo/Algo"
+import { AlgoFactory, AlgoType } from "../algo/AlgoFactory"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
@@ -25,7 +25,7 @@ export class OrderManager {
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         this.log.jinfo({
             event: this.pair + ":ParentOrders",
-            params: this.parentOrders.map<string>((order: Order) => order.toString())
+            params: this.parentOrders.map<string>((order: Order) => order.toString()),
         })
 
         return await Promise.all(

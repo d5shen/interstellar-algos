@@ -5,6 +5,7 @@ import { Side } from "../Constants"
 import { Pov } from "./impl/Pov"
 import { Twap } from "./impl/Twap"
 import Big from "big.js"
+import { Algo } from "./Algo"
 
 export enum AlgoType {
     POV,
