@@ -23,7 +23,7 @@ export class Twap extends Algo {
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL
-        
+
         this.tradeSchedule = this.calcTradeSchedule()
     }
 
@@ -31,10 +31,15 @@ export class Twap extends Algo {
         if (this.tradeSchedule.size() == 0 && this.failTrades.size() == 0) {
             // NO MORE SCHEULED TRADED OR FAIL TRADES
             this._status = AlgoStatus.COMPLETED
+            return false
         }
 
-        // JL - TODO - what if all the failed trades accumulated at the end but timeElapse > TIME?
-        // JL - TODO - or what if the last trade fails?
+        if (this.timeElapse > 3 * this.time) {
+            this.twapLog.error(`executing Twap Algo time is way pass the schedule time. The algo is forced to completed. The remaining quantity is ${this.remainingQuantity}.`)
+            this._status = AlgoStatus.COMPLETED
+            return false
+        }
+
         if (this.timeElapse > this.time && this._status != AlgoStatus.COMPLETED) {
             this.twapLog.warn(`total time cycle elpsae ${this.timeElapse} since start of algo, but the algo is not yet completed. The config time cycle is ${this.time}`)
         }

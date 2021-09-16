@@ -18,7 +18,7 @@ export enum AlgoType {
 export enum AlgoUrgency {
     LOW,
     MEDIUM,
-    HIGH
+    HIGH,
 }
 
 export enum AlgoStatus {
@@ -53,25 +53,23 @@ export abstract class Algo {
 
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
     async execute(ammProps: AmmProperties, childOrder: TradeRecord): Promise<AlgoStatus> {
-        // TODO JL - HANDLE sendChildOrder catch
-
         // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
         // if selling FTT, I want to give up AT MOST size*(1+slip) contracts
         const currentPrice = ammProps.price
         const tradeQuantity = this.tradeQuantity()
         const size = tradeQuantity.div(currentPrice)
         const baseAssetAmountLimit = this.direction == Side.BUY ? size.mul(BIG_ONE.sub(this.maxSlippage())) : size.mul(BIG_ONE.add(this.maxSlippage()))
-        
+
         childOrder.notional = tradeQuantity
         childOrder.size = size
         childOrder.price = currentPrice
         try {
             const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, tradeQuantity, baseAssetAmountLimit, this.leverage(), childOrder)
+            // only update these on success (no exception thrown)
             this._remainingQuantity = this._remainingQuantity.sub(tradeQuantity)
-            if (this._remainingQuantity.eq(BIG_ZERO)) {
+            if (this._remainingQuantity.lte(BIG_ZERO)) {
                 this._status = AlgoStatus.COMPLETED
             }
-            // only update these on success (no exception thrown)
         } catch (e) {
             this.failTrades.push(tradeQuantity)
         }
