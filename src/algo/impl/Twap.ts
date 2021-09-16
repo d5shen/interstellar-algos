@@ -36,13 +36,12 @@ export class Twap extends Algo {
 
         if (this.timeElapse > 3 * this.time) {
             this.twapLog.error(`executing Twap Algo time is way pass the schedule time. The algo is forced to completed. The remaining quantity is ${this.remainingQuantity}.`)
-            this._status = AlgoStatus.COMPLETED
+            this._status = AlgoStatus.FAILED
             return false
         }
 
         if (this.timeElapse > this.time && this._status != AlgoStatus.COMPLETED) {
             this.twapLog.warn(`total time cycle elpsae ${this.timeElapse} since start of algo, but the algo is not yet completed. The config time cycle is ${this.time}`)
-            this._status = AlgoStatus.FAILED
         }
 
         let tradeQuantity = BIG_ZERO
