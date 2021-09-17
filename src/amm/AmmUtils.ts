@@ -1,32 +1,26 @@
-import { perpfiFee } from "../configs"
-import { BIG_10, BIG_1BIO, BIG_1K, BIG_ONE, BIG_ZERO, Side } from "../Constants"
+import { AmmProps } from "../eth/perp/PerpService"
+import { BIG_1BIO, BIG_ONE, BIG_ZERO } from "../Constants"
 import { BigNumber } from "@ethersproject/bignumber"
 import { BaseEthService } from "../eth/EthService"
-import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
 import { parseUnits } from "@ethersproject/units"
-import { Position, AmmProps } from "../eth/perp/PerpService"
-import { AmmConfig } from "./AmmConfigs"
 import { Wallet } from "ethers"
 import Big from "big.js"
 
 export class GasService {
     private ethService: BaseEthService
     private safeGasPrice: BigNumber
-    baseMultiplier: Big
     
     constructor(ethService: BaseEthService) {
         this.ethService = ethService
         this.safeGasPrice = BigNumber.from(0)
-        this.baseMultiplier = BIG_ONE
     }
 
     // gas price in wei
     // 1 gwei = 1e9 wei
     get(multiplier: Big = BIG_ONE): BigNumber {
         let newGasPrice = Big(this.safeGasPrice.toString()) // in wei
-        let totalMultiplier = multiplier.mul(this.baseMultiplier)
-        newGasPrice = newGasPrice.mul(totalMultiplier)
+        newGasPrice = newGasPrice.mul(multiplier)
         
         // minimum 1 gwei
         newGasPrice = newGasPrice.lt(BIG_1BIO) ? BIG_1BIO : newGasPrice

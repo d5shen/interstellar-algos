@@ -11,8 +11,7 @@ import { AmmConfig } from "../amm/AmmConfigs"
 
 export class OrderManager {
     // TODO:
-    //   manages orders per Amm
-    //   watch out for block reorgs...?
+    //   watch out for block reorgs...
     //      Maybe we could fire a message event with some topic for the compelted orders with all the child order. In this case, any user (reportig/GUI/risk etc) can record such thing easily and notify the customer
 
     private readonly log = Log.getLogger(OrderManager.name)

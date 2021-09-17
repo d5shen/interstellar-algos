@@ -1,5 +1,4 @@
 import * as PerpUtils from "../eth/perp/PerpUtils"
-import { Amm } from "../../types/ethers"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
@@ -62,13 +61,11 @@ export class Order {
 
         if (this.algo.status == AlgoStatus.COMPLETED) {
             this._status = OrderStatus.COMPLETED
-        }
-
-        if (this.algo.status == AlgoStatus.FAILED) {
+        } else if (this.algo.status == AlgoStatus.FAILED) {
             this._status = OrderStatus.CANCELED
         }
 
-        return this.status
+        return this._status
     }
 
     get status(): OrderStatus {

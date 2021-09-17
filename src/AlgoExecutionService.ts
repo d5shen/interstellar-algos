@@ -137,8 +137,6 @@ export class AlgoExecutionService {
 
     protected loadConfigs() {
         try {
-            let baseGasMultiplier = this.gasService.baseMultiplier
-
             let localConfigs = new Map<string, AmmConfig>()
             const configs = fs.readFileSync(configPath, "utf8")
             const data = JSON.parse(configs, (key, value) => {
@@ -153,14 +151,12 @@ export class AlgoExecutionService {
                 params: { data },
             })
             // if not found in the config, then set it back to the old value
-            baseGasMultiplier = data.baseGasMultiplier ?? baseGasMultiplier
             for (const key in data.ammConfigMap) {
                 const config = new AmmConfig(data.ammConfigMap[key])
                 localConfigs.set(key, config)
             }
 
             // only update the real configs if parsing succeeded
-            this.gasService.baseMultiplier = baseGasMultiplier
             this.configs = localConfigs
         } catch (e) {
             this.log.jerror({
