@@ -2,7 +2,6 @@ import "./init"
 import * as AmmUtils from "./amm/AmmUtils"
 import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
-import * as readline from "readline"
 import { pollFrequency, configPath, slowPollFrequency } from "./configs"
 import { AlgoExecutor } from "./algo/AlgoExecutor"
 import { AlgoType } from "./algo/AlgoFactory"
@@ -22,9 +21,9 @@ import { PerpPositionService } from "./eth/perp/PerpPositionService"
 import { preflightCheck, tcp, port, topic } from "./configs"
 import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
-import { logger, Wallet } from "ethers"
+import { Socket, socket } from "zeromq"
+import { Wallet } from "ethers"
 import Big from "big.js"
-import { socket } from "zeromq"
 
 export class AmmProperties {
     readonly pair: string
@@ -59,11 +58,11 @@ export class AlgoExecutionService {
     protected readonly serverProfile: ServerProfile = new ServerProfile()
     protected readonly systemMetadataFactory: SystemMetadataFactory
 
-    protected cmd: readline.Interface
     protected systemMetadata!: EthMetadata
     protected openAmms!: Amm[]
     protected initialized = false
     protected lastPrecheck = false
+    protected sock: Socket
     protected amms = new Map<string, AmmProperties>() // key = AMM Contract Address
     protected pairs = new Map<string, string>() // key = pair -> address
     protected orderManagers = new Map<string, OrderManager>() // key = AMM Contract Address
@@ -124,24 +123,12 @@ export class AlgoExecutionService {
         return
     }
 
-    readInput(): void {
-        // set up std in listener
-        this.cmd = readline.createInterface({ input: process.stdin, output: process.stdout })
-        const asyncReadLine = () => {
-            this.cmd.question("ALGO> ", (input: string) => {
-                this.handleInput(input.trim())
-                asyncReadLine()
-            })
-        }
-        asyncReadLine()
-    }
-
     subscribeInput(): void {
-        const sock = socket("sub")
-        sock.connect(`tcp://${tcp}:${port}`)
-        sock.subscribe(topic)
+        this.sock = socket("sub")
+        this.sock.connect(`tcp://${tcp}:${port}`)
+        this.sock.subscribe(topic)
         this.log.info(`service subscriber connect to port ${port} on topic:${topic}`)
-        sock.on("message", (topic, message) => {
+        this.sock.on("message", (topic, message) => {
             this.handleInput(message.toString().trim())
         })
     }
@@ -215,6 +202,7 @@ export class AlgoExecutionService {
     async start(): Promise<void> {
         await this.initialize()
         await this.subscribe()
+        this.subscribeInput()
         await this.checkOrders()
     }
 
