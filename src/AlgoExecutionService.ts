@@ -209,7 +209,7 @@ export class AlgoExecutionService {
 
     async startInterval(): Promise<void> {
         try {
-            await AmmUtils.createTimeout(() => this.initialize(), 120000, "AlgoExecutionService:initialize:TIMEOUT:120s")
+            await AmmUtils.createTimeout(() => this.initialize(), 300000, "AlgoExecutionService:initialize:TIMEOUT:120s")
         } catch (e) {
             this.log.error(e)
             process.exit(1)
