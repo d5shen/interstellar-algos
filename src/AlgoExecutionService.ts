@@ -19,11 +19,12 @@ import { MaxUint256 } from "@ethersproject/constants"
 import { OrderManager } from "./order/OrderManager"
 import { PerpService } from "./eth/perp/PerpService"
 import { PerpPositionService } from "./eth/perp/PerpPositionService"
-import { preflightCheck } from "./configs"
+import { preflightCheck, tcp, port, topic } from "./configs"
 import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
-import { Wallet } from "ethers"
+import { logger, Wallet } from "ethers"
 import Big from "big.js"
+import { socket } from "zeromq"
 
 export class AmmProperties {
     readonly pair: string
@@ -133,6 +134,16 @@ export class AlgoExecutionService {
             })
         }
         asyncReadLine()
+    }
+
+    subscribeInput(): void {
+        const sock = socket("sub")
+        sock.connect(`tcp://${tcp}:${port}`)
+        sock.subscribe(topic)
+        this.log.info(`service subscriber connect to port ${port} on topic:${topic}`)
+        sock.on("message", (topic, message) => {
+            this.handleInput(message.toString().trim())
+        })
     }
 
     protected loadConfigs() {

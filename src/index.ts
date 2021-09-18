@@ -4,4 +4,5 @@ import { AlgoExecutionService } from "./AlgoExecutionService"
     const algoEx = new AlgoExecutionService()
     await algoEx.startInterval()
     algoEx.readInput()
+    algoEx.subscribeInput()
 })()

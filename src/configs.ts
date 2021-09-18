@@ -16,3 +16,7 @@ export const preflightCheck = {
     XDAI_BALANCE_THRESHOLD: Big(5),
     USDC_BALANCE_THRESHOLD: Big(100),
 }
+
+export const tcp: string = "127.0.0.1"
+export const port: string = "3000"
+export const topic: string = "INTERSTELLAR-ALGO"

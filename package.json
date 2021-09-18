@@ -47,6 +47,7 @@
         "@types/luxon": "1.22.0",
         "@types/node": "13.13.4",
         "@types/node-fetch": "2.5.7",
+        "@types/zeromq": "^5.2.0",
         "aws-sdk": "2.667.0",
         "big.js": "^6.1.1",
         "dotenv": "8.2.0",
