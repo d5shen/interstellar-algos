@@ -18,5 +18,7 @@ export const preflightCheck = {
 }
 
 export const tcp: string = "127.0.0.1"
-export const port: string = "3000"
-export const topic: string = "INTERSTELLAR-ALGO"
+export const userInputPort: string = "3000"
+export const userInputTopic: string = "INTERSTELLAR-USER-INPUT"
+export const statusPort: string = "3001"
+export const statusTopic: string = "INTERSTELLAR-USER-STATUS"

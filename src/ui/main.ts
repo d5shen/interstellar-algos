@@ -1,23 +1,33 @@
 import "../init"
 import * as readline from "readline"
 import { Socket, socket } from "zeromq"
-import { port, tcp, topic } from "../configs"
+import { statusPort, statusTopic, tcp, userInputPort, userInputTopic } from "../configs"
 import { Log } from "../Log"
 
 export class MainCLI {
     private log = Log.getLogger(MainCLI.name)
-    private sock: Socket
+    private pubSocket: Socket
+    private subSocket: Socket
     private cmd: readline.Interface
 
     constructor() {
-        this.sock = socket("pub")
-        this.sock.bindSync(`tcp://${tcp}:${port}`)
-        this.log.info(`publisher bound to port ${port}`)
+        this.pubSocket = socket("pub")
+        this.pubSocket.bindSync(`tcp://${tcp}:${userInputPort}`)
+        this.log.info(`publisher bound to port ${userInputPort}`)
+
+        this.subSocket = socket("sub")
+        this.subSocket.connect(`tcp://${tcp}:${statusPort}`)
+        this.subSocket.subscribe(statusTopic)
+        this.log.info(`service subscriber connect to port ${statusPort} on topic:${statusTopic}`)
+        this.subSocket.on("message", (topic, message) => {
+            this.receive(message.toString().trim())
+        })
+
+        this.cmd = readline.createInterface({ input: process.stdin, output: process.stdout })
     }
 
     readInput(): void {
         // set up std in listener
-        this.cmd = readline.createInterface({ input: process.stdin, output: process.stdout })
         const asyncReadLine = () => {
             this.cmd.question("INPUT> ", (input: string) => {
                 this.publish(input.trim())
@@ -27,10 +37,17 @@ export class MainCLI {
         asyncReadLine()
     }
 
-    async publish(message: string) {
+    publish(message: string) {
         // message format: string eg: TWAP SUSHI-USDC BUY 30 10 3
         // TODO: What should be the return type??
-        this.sock.send([topic, message])
+        this.pubSocket.send([userInputTopic, message])
+    }
+
+    receive(message: string) {
+        readline.clearLine(process.stdout, 0)
+        readline.cursorTo(process.stdout, 0)
+        this.log.info(message)
+        this.readInput()
     }
 }
 

@@ -2,7 +2,7 @@ import "./init"
 import * as AmmUtils from "./amm/AmmUtils"
 import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
-import { pollFrequency, configPath, slowPollFrequency } from "./configs"
+import { pollFrequency, configPath, slowPollFrequency, preflightCheck, tcp, userInputTopic, statusTopic, statusPort, userInputPort } from "./configs"
 import { AlgoExecutor } from "./algo/AlgoExecutor"
 import { AlgoType } from "./algo/AlgoFactory"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
@@ -18,7 +18,6 @@ import { MaxUint256 } from "@ethersproject/constants"
 import { OrderManager } from "./order/OrderManager"
 import { PerpService } from "./eth/perp/PerpService"
 import { PerpPositionService } from "./eth/perp/PerpPositionService"
-import { preflightCheck, tcp, port, topic } from "./configs"
 import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Socket, socket } from "zeromq"
@@ -62,7 +61,8 @@ export class AlgoExecutionService {
     protected openAmms!: Amm[]
     protected initialized = false
     protected lastPrecheck = false
-    protected sock: Socket
+    protected pubSocket: Socket
+    protected subSocket: Socket
     protected amms = new Map<string, AmmProperties>() // key = AMM Contract Address
     protected pairs = new Map<string, string>() // key = pair -> address
     protected orderManagers = new Map<string, OrderManager>() // key = AMM Contract Address
@@ -91,6 +91,11 @@ export class AlgoExecutionService {
 
     async initialize(): Promise<void> {
         if (!this.initialized) {
+            this.pubSocket = socket("pub")
+            this.pubSocket.bindSync(`tcp://${tcp}:${statusPort}`)
+            this.log.jinfo({event: `status publisher bound to port ${statusPort}`})
+            this.pubSocket.send([statusTopic, "Algo Execution Service: NOT READY"])
+
             this.systemMetadata = await this.systemMetadataFactory.fetch()
             this.openAmms = await this.perpServiceReadOnly.getAllOpenAmms()
             this.log.jinfo({ event: "NonceService:Sync", nonce: await this.nonceService.sync() })
@@ -123,14 +128,15 @@ export class AlgoExecutionService {
         return
     }
 
-    subscribeInput(): void {
-        this.sock = socket("sub")
-        this.sock.connect(`tcp://${tcp}:${port}`)
-        this.sock.subscribe(topic)
-        this.log.info(`service subscriber connect to port ${port} on topic:${topic}`)
-        this.sock.on("message", (topic, message) => {
+    async subscribeInput(): Promise<void> {
+        this.subSocket = socket("sub")
+        this.subSocket.connect(`tcp://${tcp}:${userInputPort}`)
+        this.subSocket.subscribe(userInputTopic)
+        this.log.jinfo({event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}`})
+        this.subSocket.on("message", (topic, message) => {
             this.handleInput(message.toString().trim())
         })
+        this.pubSocket.send([statusTopic, "Algo Execution Service: ready for user input"])
     }
 
     protected loadConfigs() {
@@ -202,7 +208,6 @@ export class AlgoExecutionService {
     async start(): Promise<void> {
         await this.initialize()
         await this.subscribe()
-        this.subscribeInput()
         await this.checkOrders()
     }
 
@@ -213,6 +218,7 @@ export class AlgoExecutionService {
             this.log.error(e)
             process.exit(1)
         }
+        await this.subscribeInput()
         await this.subscribe()
         await this.printPositions()
         await this.checkOrders()
@@ -286,6 +292,7 @@ export class AlgoExecutionService {
                 Reason: "Bad Input",
                 Error: e,
             })
+            this.pubSocket.send([statusTopic, `Algo Execution Service: Bad Input: [${input}]`])
         }
     }
 
