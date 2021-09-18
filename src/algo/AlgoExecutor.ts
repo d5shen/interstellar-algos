@@ -26,7 +26,7 @@ export class AlgoExecutor {
      *  leverage - up to 10x
      *  childOrder - pre-instantiated TradeRecord
      */
-    public async sendChildOrder(amm: Amm, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
+    public async sendChildOrder(ammAddress: string, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
         if (BIG_10.lt(leverage)) {
             throw new Error(`leverage maximum setting allowed is 10, current setting is ${leverage}`)
         }
@@ -44,7 +44,7 @@ export class AlgoExecutor {
             childOrder.ppBaseAssetAmountLimit = baseAssetAmountLimit
             childOrder.ppSentTimestamp = Date.now()
             // send tx to trade
-            tx = await this.perpService.openPosition(this.wallet, amm.address, side, amount, leverage, baseAssetAmountLimit, {
+            tx = await this.perpService.openPosition(this.wallet, ammAddress, side, amount, leverage, baseAssetAmountLimit, {
                 nonce: nonceService.get(),
                 gasPrice: safeGasPrice,
             })

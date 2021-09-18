@@ -1,11 +1,10 @@
 import { Algo, AlgoStatus } from "../Algo"
 import { AlgoExecutor } from "../AlgoExecutor"
-import { Amm } from "../../../types/ethers"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
+import { BigNumber } from "ethers"
 import { BIG_10, BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
 import { Log } from "../../Log"
-import { Pair, Stack } from "../../DataStructure"
 import Big from "big.js"
 
 export class Pov extends Algo {
@@ -17,8 +16,8 @@ export class Pov extends Algo {
 
     private _tradeQuantity: Big
 
-    constructor(algoExecutor: AlgoExecutor, amm: Amm, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
-        super(algoExecutor, amm, pair, direction, quantity, ammConfig)
+    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void) {
+        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion)
         this.percentOfVolume = Big(algoSettings.POV)
         this.interval = algoSettings.INTERVAL * 60 * 1000 // user inputs in minutes
 
@@ -62,5 +61,12 @@ export class Pov extends Algo {
 
     tradeQuantity(): Big {
         return this._tradeQuantity
+    }
+    
+    positionChanged(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): void {
+        if (this.ammAddress == ammAddress) {
+            const timestamp = Date.now()
+            positionNotional
+        }
     }
 }

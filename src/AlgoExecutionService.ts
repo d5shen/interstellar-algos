@@ -4,7 +4,7 @@ import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
 import { pollFrequency, configPath, slowPollFrequency, preflightCheck, tcp, userInputTopic, statusTopic, statusPort, userInputPort } from "./configs"
 import { AlgoExecutor } from "./algo/AlgoExecutor"
-import { AlgoType } from "./algo/AlgoFactory"
+import { AlgoFactory, AlgoType } from "./algo/AlgoFactory"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
 import { BIG_10, BIG_ZERO, Side } from "./Constants"
 import { Amm } from "../types/ethers"
@@ -12,6 +12,7 @@ import { BigNumber } from "@ethersproject/bignumber"
 import { ERC20Service } from "./eth/ERC20Service"
 import { EthMetadata, SystemMetadataFactory } from "./eth/SystemMetadataFactory"
 import { EthService, EthServiceReadOnly } from "./eth/EthService"
+import { EventEmitter } from "events"
 import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { MaxUint256 } from "@ethersproject/constants"
@@ -63,6 +64,7 @@ export class AlgoExecutionService {
     protected lastPrecheck = false
     protected pubSocket: Socket
     protected subSocket: Socket
+    protected eventEmitter: EventEmitter
     protected amms = new Map<string, AmmProperties>() // key = AMM Contract Address
     protected pairs = new Map<string, string>() // key = pair -> address
     protected orderManagers = new Map<string, OrderManager>() // key = AMM Contract Address
@@ -85,6 +87,8 @@ export class AlgoExecutionService {
 
         this.positionService = new PerpPositionService(this.wallet.address, this.perpService)
         this.algoExecutor = new AlgoExecutor(this.wallet, this.perpService, this.gasService)
+
+        this.eventEmitter = new EventEmitter()
 
         fs.watchFile(configPath, (curr, prev) => this.configChanged(curr, prev))
     }
@@ -113,7 +117,7 @@ export class AlgoExecutionService {
 
                 let ammProps = new AmmProperties(pair, quoteAssetAddress, AmmUtils.getAmmPrice(ammState), ammState.baseAssetReserve, ammState.quoteAssetReserve)
                 this.amms.set(amm.address, ammProps)
-                this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, amm, pair))
+                this.orderManagers.set(amm.address, new OrderManager(this.algoExecutor, pair))
 
                 await this.approveAllowances(pair, quoteAssetAddress)
             }
@@ -205,12 +209,6 @@ export class AlgoExecutionService {
      **
      ******************************************/
 
-    async start(): Promise<void> {
-        await this.initialize()
-        await this.subscribe()
-        await this.checkOrders()
-    }
-
     async startInterval(): Promise<void> {
         try {
             await AmmUtils.createTimeout(() => this.initialize(), 300000, "AlgoExecutionService:initialize:TIMEOUT:120s")
@@ -263,7 +261,7 @@ export class AlgoExecutionService {
         }
     }
 
-    // DGS - TODO - generalize inputs and AlgoSettings
+    // TO-DO: better error handling, refined user entry
     protected handleInput(input: string): void {
         this.log.jinfo({ input })
         try {
@@ -272,21 +270,19 @@ export class AlgoExecutionService {
             const pair = tokens[1]
             const side = Side[tokens[2]] // "BUY" or "SELL"
             const quantity = Big(tokens[3])
-            const totalMinutes = parseInt(tokens[4]) // in minutes, must be integer
-            const interval = parseInt(tokens[5]) // in minutes, must be integer
-            // TODO - user input error handling
-            if (interval > totalMinutes / 2) {
-                throw Error("Intervals cannot be more than half the Total Time - you must have at least two iterations")
-            } else if (quantity.lt(BIG_10)) {
+            if (quantity.lt(BIG_10)) {
                 throw Error("Notional cannot be less than 10 USDC")
             }
 
-            // convert minutes to number of loop cycles - assume that pollFrequency divides into 60
-            const totalCycles = Math.floor((60 * totalMinutes) / pollFrequency)
-            const intervalCycles = Math.floor((60 * interval) / pollFrequency)
+            const settings = tokens.slice(4)
+            const algoSettings = AlgoFactory.createSettings(algoType, settings)
 
-            const o = this.orderManagers.get(this.pairs.get(pair))
-            o.createOrder(side, quantity, this.configs.get(pair), algoType, { TIME: totalCycles, INTERVAL: intervalCycles })
+            const ammAddress = this.pairs.get(pair)
+            const ammConfig = this.configs.get(pair)
+            const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
+            
+            const orderManager = this.orderManagers.get(ammAddress)
+            orderManager.createOrder(side, quantity, algo)
         } catch (e) {
             this.log.jerror({
                 Reason: "Bad Input",
@@ -302,9 +298,8 @@ export class AlgoExecutionService {
 
         try {
             contract.on("PositionChanged", (trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment) => {
-                // can't have any awaits inside this event listener function to be logged
-                // can only call one async function as an event handler to do something
                 this.handlePositionChange(trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment)
+                this.eventEmitter.emit("PositionChanged", trader, ammAddress, margin, positionNotional, exchangedPositionSize, fee, positionSizeAfter, realizedPnl, unrealizedPnlAfter, badDebt, liquidationPenalty, spotPrice, fundingPayment)
             })
         } catch (e) {
             this.log.jerror({
@@ -361,6 +356,7 @@ export class AlgoExecutionService {
         try {
             amm.on("ReserveSnapshotted", (quoteAssetReserve, baseAssetReserve, timestamp) => {
                 this.handleReserveSnapshot(amm, quoteAssetReserve, baseAssetReserve, timestamp)
+                this.eventEmitter.emit("ReserveSnapshotted", amm, quoteAssetReserve, baseAssetReserve, timestamp)
             })
         } catch (e) {
             this.log.jerror({

@@ -1,7 +1,7 @@
 import { AlgoExecutor } from "./AlgoExecutor"
-import { Amm } from "../../types/ethers"
 import { AmmConfig } from "../amm/AmmConfigs"
 import { AmmProperties } from "../AlgoExecutionService"
+import { BigNumber } from "ethers"
 import { BIG_ONE, BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import { Queue } from "../DataStructure"
@@ -23,7 +23,7 @@ export abstract class Algo {
     protected _status: AlgoStatus = AlgoStatus.INITIALIZED
     protected failTrades = new Queue<Big>()
 
-    protected constructor(readonly algoExecutor: AlgoExecutor, readonly amm: Amm, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig) {
+    protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void) {
         this._remainingQuantity = quantity
         this._status = AlgoStatus.IN_PROGRESS
     }
@@ -41,12 +41,13 @@ export abstract class Algo {
         childOrder.size = size
         childOrder.price = currentPrice
         try {
-            const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, tradeQuantity, baseAssetAmountLimit, this.leverage(), childOrder)
+            const positionChangedLog = await this.algoExecutor.sendChildOrder(this.ammAddress, this.pair, this.direction, tradeQuantity, baseAssetAmountLimit, this.leverage(), childOrder)
             // only update these on success (no exception thrown)
             this._remainingQuantity = this._remainingQuantity.sub(tradeQuantity)
             this.lastTradeTime = Date.now()
             if (this._remainingQuantity.lte(BIG_ZERO)) {
                 this._status = AlgoStatus.COMPLETED
+                this.callbackOnCompletion()
             }
         } catch (e) {
             this.failTrades.push(tradeQuantity)
@@ -82,4 +83,8 @@ export abstract class Algo {
 
     // these can be dynamic depending on the type of Algo
     abstract tradeQuantity(): Big
+
+    positionChanged(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): void {
+        // does nothing unless overridden
+    }
 }

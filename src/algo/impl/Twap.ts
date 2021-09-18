@@ -18,8 +18,8 @@ export class Twap extends Algo {
     private tradeSchedule: Stack<Pair<number, Big>>
     private _tradeQuantity: Big
 
-    constructor(algoExecutor: AlgoExecutor, amm: Amm, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
-        super(algoExecutor, amm, pair, direction, quantity, ammConfig)
+    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
+        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {})
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL
