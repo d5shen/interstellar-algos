@@ -8,12 +8,6 @@ import { Queue } from "../DataStructure"
 import { TradeRecord } from "../order/Order"
 import Big from "big.js"
 
-export enum AlgoUrgency {
-    LOW,
-    MEDIUM,
-    HIGH,
-}
-
 export enum AlgoStatus {
     INITIALIZED,
     IN_PROGRESS,
@@ -24,7 +18,7 @@ export enum AlgoStatus {
 export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
 
-    protected lastTradeTime: number = 0 // initialize the lastTradeTime, epoch
+    protected lastTradeTime: number = 0 // initialize the lastTradeTime
     protected _remainingQuantity: Big = BIG_ZERO
     protected _status: AlgoStatus = AlgoStatus.INITIALIZED
     protected failTrades = new Queue<Big>()
@@ -50,6 +44,7 @@ export abstract class Algo {
             const positionChangedLog = await this.algoExecutor.sendChildOrder(this.amm, this.pair, this.direction, tradeQuantity, baseAssetAmountLimit, this.leverage(), childOrder)
             // only update these on success (no exception thrown)
             this._remainingQuantity = this._remainingQuantity.sub(tradeQuantity)
+            this.lastTradeTime = Date.now()
             if (this._remainingQuantity.lte(BIG_ZERO)) {
                 this._status = AlgoStatus.COMPLETED
             }
