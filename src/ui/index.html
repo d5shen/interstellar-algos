@@ -1,0 +1,43 @@
+<html>
+
+<body>
+    I don't know html
+    <div>
+        <select id="pairs" name="pairs">
+            <option value="AAVE-USDC">AAVE-USDC</option>
+            <option value="ALPHA-USDC">ALPHA-USDC</option>
+            <option value="COMP-USDC">COMP-USDC</option>
+            <option value="CREAM-USDC">CREAM-USDC</option>
+            <option value="CRV-USDC">CRV-USDC</option>
+            <option value="DOT-USDC">DOT-USDC</option>
+            <option value="FTT-USDC">FTT-USDC</option>
+            <option value="GRT-USDC">GRT-USDC</option>
+            <option value="LINK-USDC">LINK-USDC</option>
+            <option value="MKR-USDC">MKR-USDC</option>
+            <option value="PERP-USDC">PERP-USDC</option>
+            <option value="REN-USDC">REN-USDC</option>
+            <option value="SNX-USDC">SNX-USDC</option>
+            <option value="SUSHI-USDC">SUSHI-USDC</option>
+            <option value="UNI-USDC">UNI-USDC</option>
+        </select>
+    </div>
+    <div>
+        <input type="radio" id="BUY" name="direction" value="BUY" checked><label for="BUY">BUY</label>
+        <input type="radio" id="SELL" name="direction" value="SELL"><label for="SELL">SELL</label>
+    </div>
+    <div>
+        <label for="notional">Notional ($)</label>
+        <input type="number" id="notional" name="notional", value="" min="100" step="100">
+    </div>
+    <div>
+        <label for="totalTime">Total Time (min)</label>
+        <input type="number" id="totalTime" name="totalTime", value="" min="2" step="1">
+        <label for="totalTime">Time Interval (min)</label>
+        <input type="number" id="timeInterval" name="timeInterval", value="" min="1" step="1">
+    </div>
+    <div>
+        <button type="button" onclick="alert('call some javascript')">Submit</button>
+    </div>
+</body>
+
+</html>
