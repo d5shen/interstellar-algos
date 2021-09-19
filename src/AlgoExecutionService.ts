@@ -162,15 +162,16 @@ export class AlgoExecutionService {
     }
 
     private cancelOrder(cancelId: string) {
-        let cancelStatus = false
-        for (var manager of this.orderManagers.values()) {
-            cancelStatus = manager.cancelOrder(cancelId)
+        try {
+            const pair = cancelId.split('.')[0]
+            const manager = this.orderManagers.get(this.pairs.get(pair))
+            const cancelStatus = manager.cancelOrder(cancelId)
             if (cancelStatus) {
-                this.pubSocket.send([statusTopic, `order ${cancelId} is canceled successfully. `, true])
-                break
+                this.pubSocket.send([statusTopic, `order ${cancelId} is canceled successfully.`, true])
+            } else {
+                this.pubSocket.send([statusTopic, `order ${cancelId} could not be canceled.`, true])
             }
-        }
-        if (!cancelStatus) {
+        } catch (e) {
             this.pubSocket.send([statusTopic, `order id "${cancelId}"" can't be found. Please double check. Use command "all orders" for reference`, true])
         }
     }
