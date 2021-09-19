@@ -1,6 +1,6 @@
 import { Algo, AlgoStatus } from "../Algo"
 import { AlgoExecutor } from "../AlgoExecutor"
-import { Amm } from "../../../types/ethers"
+import { AlgoType } from "../AlgoFactory"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
 import { BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
@@ -10,13 +10,15 @@ import Big from "big.js"
 
 export class Twap extends Algo {
     private readonly twapLog = Log.getLogger(Twap.name)
-
+    
     private time: number // total time to execute the algo (in number of main loop cycle)
     private interval: number // time interval between each trade (in number of main loop cycle)
 
     private timeElapse: number = 0
     private tradeSchedule: Stack<Pair<number, Big>>
     private _tradeQuantity: Big
+
+    readonly type: AlgoType = AlgoType.TWAP
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {})

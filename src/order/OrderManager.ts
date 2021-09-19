@@ -13,7 +13,6 @@ export class OrderManager {
     // TODO:
     //   make this a singleton or a static class
     //   watch out for block reorgs...
-    //      Maybe we could fire a message event with some topic for the compelted orders with all the child order. In this case, any user (reportig/GUI/risk etc) can record such thing easily and notify the customer
 
     private readonly log = Log.getLogger(OrderManager.name)
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
