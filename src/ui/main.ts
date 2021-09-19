@@ -31,17 +31,45 @@ export class MainCLI {
         // set up std in listener
         const asyncReadLine = () => {
             this.cmd.question("INPUT> ", (input: string) => {
-                this.publish(input.trim())
+                this.interpret(input.trim())
                 asyncReadLine()
             })
         }
         asyncReadLine()
     }
 
+    interpret(message: string): void {
+        if (message.toLowerCase() == "help") {
+            console.log(" ")
+            console.log(" ")
+            console.log("Input format:    INPUT> [Algo Type] [Pair] [BUY/SELL] [USDC Amount] [Algo Settings...]")
+            console.log(" ")
+            console.log("Algo Types available:")
+            console.log("    - TWAP")
+            console.log("    - POV")
+            console.log(" ")
+            console.log("Pair Format:  SUSHI-USDC")
+            console.log(" ")
+            console.log("TWAP Algo Settings:   [TOTAL TIME (minutes)] [TIME BETWEEN TRADES (minutes)] ")
+            console.log("TWAP example:    INPUT> TWAP SUSHI-USDC BUY 1000 60 6")
+            console.log(" ")
+            console.log("POV Algo Settings:    [POV (devimal)] [TIME BETWEEN TRADES (minutes)] [MAX CLIP SIZE (optional)]")
+            console.log("POV example:     INPUT> POV SUSHI-USDC SELL 1000 0.05 5")
+            console.log(" ")
+            console.log(" ")
+        } else if (message.toLowerCase() == "quit" || message.toLowerCase() == "exit") {
+            process.exit(0)
+        } else {
+            this.publish(message.trim())
+        }
+    }
+
     publish(message: string): void {
         // message format: string eg: TWAP SUSHI-USDC BUY 30 10 3
         if (this.algoServerStatus) {
             this.pubSocket.send([userInputTopic, message])
+        } else {
+            this.log.info("Algo Execution Service: NOT READY")
         }
     }
 
