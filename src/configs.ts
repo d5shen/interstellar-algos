@@ -8,6 +8,7 @@ import Big from "big.js"
 export const pollFrequency = 15 // in seconds
 export const slowPollFrequency = 60 // in seconds
 export const perpfiFee = Big(0.001) // default 0.1%
+export const initialTimeOut = 5 // in mins
 
 export const configPath = "configs.json"
 

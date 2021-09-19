@@ -24,11 +24,13 @@ export class Order {
     private childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private childOrderInFlight: boolean = false
     private algo: Algo
+    private createTime: string
 
     constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
         this.id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
         this._status = OrderStatus.IN_PROGRESS
+        this.createTime = new Date().toLocaleString()
     }
 
     // called by the OrderManager when it's loop time to check on this parent order
@@ -86,7 +88,7 @@ export class Order {
     }
 
     toString(): string {
-        return `${this.id}:${OrderStatus[this._status]}`
+        return `id:${this.id}, created time:${this.createTime}, algo:${this.algo}, status:${OrderStatus[this._status]}`
     }
 }
 

@@ -12,7 +12,8 @@ import Big from "big.js"
 export class Pov extends Algo {
     private readonly povLog = Log.getLogger(Pov.name)
 
-    private percentOfVolume: Big // percent tracking the PerpFi's total volume 
+    private percentOfVolume: Big // percent tracking the PerpFi's total volume
+    private interval_in_mins: number
     private interval: number // minimum waiting period between child orders
     private maximumSize: Big = BIG_ZERO // optional
     private volumeByTradeTime = new Map<number, Big>()
@@ -24,6 +25,7 @@ export class Pov extends Algo {
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion)
         this.percentOfVolume = Big(algoSettings.POV)
+        this.interval_in_mins = algoSettings.INTERVAL
         this.interval = algoSettings.INTERVAL * 60 * 1000 // user inputs in minutes
 
         // don't be stupid and set a tiny max size
@@ -42,12 +44,12 @@ export class Pov extends Algo {
         if (Date.now() < this.lastTradeTime + this.interval) {
             return false
         }
-        // check volume done since last trade 
-        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime) 
+        // check volume done since last trade
+        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime)
         this.povLog.jinfo({ event: this.pair + ":VolumeSinceLastTrade", volume: volumeSinceLastTrade })
 
         let tradeQuantity = BIG_ZERO
-        const povQuantity = (volumeSinceLastTrade.mul(this.percentOfVolume))
+        const povQuantity = volumeSinceLastTrade.mul(this.percentOfVolume)
         if (povQuantity.lt(BIG_10)) {
             return false
         }
@@ -57,7 +59,7 @@ export class Pov extends Algo {
         // cap it at the maximum size
         if (this.maximumSize.gt(BIG_ZERO) && povQuantity.gt(this.maximumSize)) {
             tradeQuantity = this.maximumSize
-        } 
+        }
 
         // don't trade more than the remaining quantity!
         if (tradeQuantity.gt(this.remainingQuantity)) {
@@ -71,8 +73,22 @@ export class Pov extends Algo {
     tradeQuantity(): Big {
         return this._tradeQuantity
     }
-    
-    positionChanged(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): void {
+
+    positionChanged(
+        trader: string,
+        ammAddress: string,
+        margin: BigNumber,
+        positionNotional: BigNumber,
+        exchangedPositionSize: BigNumber,
+        fee: BigNumber,
+        positionSizeAfter: BigNumber,
+        realizedPnl: BigNumber,
+        unrealizedPnlAfter: BigNumber,
+        badDebt: BigNumber,
+        liquidationPenalty: BigNumber,
+        spotPrice: BigNumber,
+        fundingPayment: BigNumber
+    ): void {
         if (this.ammAddress == ammAddress) {
             if (!this.volumeByTradeTime.has(this.lastTradeTime)) {
                 this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
@@ -82,5 +98,9 @@ export class Pov extends Algo {
             this.volumeByTradeTime.set(this.lastTradeTime, volume)
             this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })
         }
+    }
+
+    toString(): string {
+        return `${super.toString()}, settings:{interval: ${this.interval_in_mins}mins, maximum size:${this.maximumSize}}`
     }
 }

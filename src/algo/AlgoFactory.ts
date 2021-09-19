@@ -29,17 +29,16 @@ export class AlgoFactory {
 
     public static createSettings(algoType: AlgoType, input: string[]): any {
         if (algoType == AlgoType.TWAP) {
-            
             const totalMinutes = parseInt(input[0]) // in minutes, must be integer
             const interval = parseInt(input[1]) // in minutes, must be integer
             if (interval > totalMinutes / 2) {
                 throw Error("Intervals cannot be more than half the Total Time - you must have at least two iterations")
-            } 
+            }
 
             // convert minutes to number of loop cycles - assume that pollFrequency divides into 60
             const totalCycles = Math.floor((60 * totalMinutes) / pollFrequency)
             const intervalCycles = Math.floor((60 * interval) / pollFrequency)
-            return { TIME: totalCycles, INTERVAL: intervalCycles }
+            return { TIME: totalCycles, INTERVAL: intervalCycles, TOTAL_MINS: totalMinutes, INTERVAL_IN_MINS: interval }
         } else if (algoType == AlgoType.POV) {
             const pov = parseFloat(input[0]) // in decimal
             if (pov < 0.01 || pov > 0.9) {
@@ -50,7 +49,7 @@ export class AlgoFactory {
             let settings = { POV: pov, INTERVAL: interval }
             if (input.length > 2) {
                 const maximumSize = parseFloat(input[2])
-                settings["MAXIMUM_SIZE"] = maximumSize 
+                settings["MAXIMUM_SIZE"] = maximumSize
             }
 
             return settings

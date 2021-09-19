@@ -8,6 +8,8 @@ import { Side } from "../Constants"
 import Big from "big.js"
 import { AlgoExecutor } from "../algo/AlgoExecutor"
 import { Algo } from "../algo/Algo"
+import { orderBy } from "lodash"
+import { statusTopic } from "../configs"
 
 export class OrderManager {
     // TODO:
@@ -41,5 +43,13 @@ export class OrderManager {
         const o = new Order(this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
         return o
+    }
+
+    public retriveOrders(status?: OrderStatus): Array<Order> {
+        if (status) {
+            return this.parentOrders.filter((order) => order.status == status)
+        } else {
+            return this.parentOrders
+        }
     }
 }

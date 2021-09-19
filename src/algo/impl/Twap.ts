@@ -10,22 +10,25 @@ import Big from "big.js"
 
 export class Twap extends Algo {
     private readonly twapLog = Log.getLogger(Twap.name)
-    
+
     private time: number // total time to execute the algo (in number of main loop cycle)
     private interval: number // time interval between each trade (in number of main loop cycle)
 
     private timeElapse: number = 0
     private tradeSchedule: Stack<Pair<number, Big>>
     private _tradeQuantity: Big
-
+    private algoSettings: any
     readonly type: AlgoType = AlgoType.TWAP
+    private time_in_mins: number
+    private interval_in_mins: number
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {})
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL
-
+        this.time_in_mins = algoSettings.TOTAL_MINS
+        this.interval_in_mins = algoSettings.INTERVAL_IN_MINS
         this.tradeSchedule = this.calcTradeSchedule()
     }
 
@@ -82,5 +85,9 @@ export class Twap extends Algo {
 
     tradeQuantity(): Big {
         return this._tradeQuantity
+    }
+
+    toString(): string {
+        return `${super.toString()}, settings:{total time:${this.time_in_mins}mins, interval: ${this.interval_in_mins}mins}`
     }
 }

@@ -2,7 +2,7 @@ import "./init"
 import * as AmmUtils from "./amm/AmmUtils"
 import * as PerpUtils from "./eth/perp/PerpUtils"
 import * as fs from "fs"
-import { pollFrequency, configPath, slowPollFrequency, preflightCheck, tcp, userInputTopic, statusTopic, statusPort, userInputPort } from "./configs"
+import { pollFrequency, configPath, slowPollFrequency, preflightCheck, tcp, userInputTopic, statusTopic, statusPort, userInputPort, initialTimeOut } from "./configs"
 import { AlgoExecutor } from "./algo/AlgoExecutor"
 import { AlgoFactory, AlgoType } from "./algo/AlgoFactory"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
@@ -24,6 +24,8 @@ import { Service } from "typedi"
 import { Socket, socket } from "zeromq"
 import { Wallet } from "ethers"
 import Big from "big.js"
+import { Order, OrderStatus } from "./order/Order"
+import { orderBy } from "lodash"
 
 export class AmmProperties {
     readonly pair: string
@@ -137,9 +139,35 @@ export class AlgoExecutionService {
         this.subSocket.subscribe(userInputTopic)
         this.log.jinfo({ event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}` })
         this.subSocket.on("message", (topic, message) => {
-            this.handleInput(message.toString().trim())
+            this.interpret(message.toString().trim())
         })
         this.pubSocket.send([statusTopic, "Algo Execution Service: ready for user input", true])
+    }
+
+    private interpret(msg: string) {
+        if (msg.toLowerCase() == "in progress orders") {
+            this.retriveOrders(OrderStatus.IN_PROGRESS)
+        } else if (msg.toLowerCase() == "all orders") {
+            this.retriveOrders()
+        } else if (msg.toLowerCase() == "cancelled orders") {
+            this.retriveOrders(OrderStatus.CANCELED)
+        } else {
+            this.handleInput(msg)
+        }
+    }
+
+    private cancellOrder(id: string) {}
+
+    private retriveOrders(status?: OrderStatus) {
+        //TODO: should this be async?
+        let orderString = "order info:"
+        this.orderManagers.forEach((manager) => {
+            const orders = manager.retriveOrders(status)
+            orders.forEach((o) => {
+                orderString = orderString + "\n" + o.toString() //todo
+            })
+        })
+        this.pubSocket.send([statusTopic, orderString, true])
     }
 
     protected loadConfigs() {
@@ -210,7 +238,7 @@ export class AlgoExecutionService {
 
     async startInterval(): Promise<void> {
         try {
-            await AmmUtils.createTimeout(() => this.initialize(), 300000, "AlgoExecutionService:initialize:TIMEOUT:120s")
+            await AmmUtils.createTimeout(() => this.initialize(), initialTimeOut * 60 * 1000, "AlgoExecutionService:initialize:TIMEOUT:120s")
         } catch (e) {
             this.log.error(e)
             process.exit(1)
@@ -271,7 +299,7 @@ export class AlgoExecutionService {
         this.log.jinfo({ input })
         try {
             const tokens = input.split(" ")
-            const algoType = AlgoType[tokens[0]] // "TWAP" only for now
+            const algoType = AlgoType[tokens[0]]
             const pair = tokens[1]
             const side = Side[tokens[2]] // "BUY" or "SELL"
             const quantity = Big(tokens[3])

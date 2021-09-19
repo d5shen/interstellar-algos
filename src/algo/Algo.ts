@@ -23,7 +23,7 @@ export abstract class Algo {
     protected _remainingQuantity: Big = BIG_ZERO
     protected _status: AlgoStatus = AlgoStatus.INITIALIZED
     protected failTrades = new Queue<Big>()
-    
+
     readonly type: AlgoType
 
     protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void) {
@@ -87,7 +87,25 @@ export abstract class Algo {
     // these can be dynamic depending on the type of Algo
     abstract tradeQuantity(): Big
 
-    positionChanged(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): void {
+    positionChanged(
+        trader: string,
+        ammAddress: string,
+        margin: BigNumber,
+        positionNotional: BigNumber,
+        exchangedPositionSize: BigNumber,
+        fee: BigNumber,
+        positionSizeAfter: BigNumber,
+        realizedPnl: BigNumber,
+        unrealizedPnlAfter: BigNumber,
+        badDebt: BigNumber,
+        liquidationPenalty: BigNumber,
+        spotPrice: BigNumber,
+        fundingPayment: BigNumber
+    ): void {
         // does nothing unless overridden
+    }
+
+    toString(): string {
+        return `${AlgoType[this.type]}, quantity: ${this.quantity}, remaining quantity:${this.remainingQuantity}`
     }
 }

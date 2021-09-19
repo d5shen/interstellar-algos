@@ -1,7 +1,7 @@
 import "../init"
 import * as readline from "readline"
 import { Socket, socket } from "zeromq"
-import { statusPort, statusTopic, tcp, userInputPort, userInputTopic } from "../configs"
+import { statusPort, statusTopic, tcp, userInputPort, userInputTopic, initialTimeOut } from "../configs"
 import { Log } from "../Log"
 
 export class MainCLI {
@@ -19,7 +19,7 @@ export class MainCLI {
         this.subSocket = socket("sub")
         this.subSocket.connect(`tcp://${tcp}:${statusPort}`)
         this.subSocket.subscribe(statusTopic)
-        this.log.info(`service subscriber connect to port ${statusPort} on topic:${statusTopic}. Waitting on algo server...(it should take less than 5 mins)`)
+        this.log.info(`service subscriber connect to port ${statusPort} on topic:${statusTopic}. Waitting on algo server...(it should take less than ${initialTimeOut} mins)`)
         this.subSocket.on("message", (topic, message, algoServerStatus) => {
             this.receive(message.toString().trim(), algoServerStatus.toString() == "true")
         })
@@ -55,6 +55,11 @@ export class MainCLI {
             console.log(" ")
             console.log("POV Algo Settings:    [POV (devimal)] [TIME BETWEEN TRADES (minutes)] [MAX CLIP SIZE (optional)]")
             console.log("POV example:     INPUT> POV SUSHI-USDC SELL 1000 0.05 5")
+            console.log(" ")
+            console.log("Check Order status command:    ")
+            console.log("    all orders")
+            console.log("    in progress orders")
+            console.log("    cancelled orders")
             console.log(" ")
             console.log(" ")
         } else if (message.toLowerCase() == "quit" || message.toLowerCase() == "exit") {
