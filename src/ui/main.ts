@@ -19,7 +19,8 @@ export class MainCLI {
         this.subSocket = socket("sub")
         this.subSocket.connect(`tcp://${tcp}:${statusPort}`)
         this.subSocket.subscribe(statusTopic)
-        this.log.info(`service subscriber connect to port ${statusPort} on topic:${statusTopic}. Waitting on algo server...(it should take less than ${initialTimeOut} mins)`)
+        this.log.info(`service subscriber connect to port ${statusPort} on topic:${statusTopic}.`)
+        this.log.info(`Waiting on algo server...(it should take less than ${initialTimeOut} mins)`)
         this.subSocket.on("message", (topic, message, algoServerStatus) => {
             this.receive(message.toString().trim(), algoServerStatus.toString() == "true")
         })
@@ -62,7 +63,8 @@ export class MainCLI {
             console.log("    cancelled orders")
             console.log(" ")
             console.log("Cancel Order command:          ")
-            console.log("    cancel order:<order id>")
+            console.log("    cancel <order id1> <order id2> ...")
+            console.log(" ")
             console.log(" ")
         } else if (message.toLowerCase() == "quit" || message.toLowerCase() == "exit") {
             process.exit(0)

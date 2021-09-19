@@ -66,6 +66,7 @@ export class Twap extends Algo {
         return BIG_ZERO.lt(tradeQuantity)
     }
 
+    // TODO: ideally some randomness is added to the schedule to minimize footprint
     private calcTradeSchedule(): Stack<Pair<number, Big>> {
         let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.quantity.div(MIN_TRADE_QUANTITY).toString())))
 

@@ -151,9 +151,11 @@ export class AlgoExecutionService {
             this.retriveOrders()
         } else if (msg.toLowerCase() == "cancelled orders") {
             this.retriveOrders(OrderStatus.CANCELED)
-        } else if (msg.startsWith("cancel order:")) {
-            const cancelId = msg.split(":")
-            this.cancelOrder(cancelId[1].trim())
+        } else if (msg.startsWith("cancel ")) {
+            const cancelId = msg.split(" ")
+            for (let i = 1; i < cancelId.length; i++) {
+                this.cancelOrder(cancelId[i].trim())
+            }
         } else {
             this.handleInput(msg)
         }
@@ -329,8 +331,8 @@ export class AlgoExecutionService {
             const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
 
             const orderManager = this.orderManagers.get(ammAddress)
-            orderManager.createOrder(side, quantity, algo)
-            this.pubSocket.send([statusTopic, `Creating order for Input: [${input}]`, true])
+            const order = orderManager.createOrder(side, quantity, algo)
+            this.pubSocket.send([statusTopic, `Created order for input: [${input}], id: ${order.id}`, true])
         } catch (e) {
             this.log.jerror({
                 Reason: "Bad Input",

@@ -98,7 +98,7 @@ export class Order {
     }
 
     toString(): string {
-        return `id:${this.id}, created time:${this.createTime}, algo:${this.algo}, status:${OrderStatus[this._status]}`
+        return `id:${this.id}, created:${this.createTime}, algo:${this.algo}, status:${OrderStatus[this._status]}`
     }
 }
 

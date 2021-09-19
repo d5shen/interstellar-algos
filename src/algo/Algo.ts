@@ -112,6 +112,6 @@ export abstract class Algo {
     }
 
     toString(): string {
-        return `${AlgoType[this.type]}, quantity: ${this.quantity}, remaining quantity:${this.remainingQuantity}`
+        return `${AlgoType[this.type]}, quantity: ${this.quantity}, remaining:${this.remainingQuantity}`
     }
 }
