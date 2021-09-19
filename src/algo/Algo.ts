@@ -14,6 +14,7 @@ export enum AlgoStatus {
     IN_PROGRESS,
     COMPLETED,
     FAILED,
+    CANCELED,
 }
 
 export abstract class Algo {
@@ -61,6 +62,10 @@ export abstract class Algo {
 
     get status(): AlgoStatus {
         return this._status
+    }
+
+    set status(status: AlgoStatus) {
+        this._status = status
     }
 
     get filledQuantity(): Big {

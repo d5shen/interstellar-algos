@@ -151,12 +151,27 @@ export class AlgoExecutionService {
             this.retriveOrders()
         } else if (msg.toLowerCase() == "cancelled orders") {
             this.retriveOrders(OrderStatus.CANCELED)
+        } else if (msg.startsWith("cancel order:")) {
+            const cancelId = msg.split(":")
+            this.cancellOrder(cancelId[1].trim())
         } else {
             this.handleInput(msg)
         }
     }
 
-    private cancellOrder(id: string) {}
+    private cancellOrder(cancelId: string) {
+        let cancelStatus = false
+        for (var manager of this.orderManagers.values()) {
+            cancelStatus = manager.cancelOrder(cancelId)
+            if (cancelStatus) {
+                this.pubSocket.send([statusTopic, `order ${cancelId} is canceled successfully. `, true])
+                break
+            }
+        }
+        if (!cancelStatus) {
+            this.pubSocket.send([statusTopic, `order ${cancelId} can't be found. Please double check if the input is correct. Use command "all orders" for reference`, true])
+        }
+    }
 
     private retriveOrders(status?: OrderStatus) {
         //TODO: should this be async?
@@ -164,7 +179,7 @@ export class AlgoExecutionService {
         this.orderManagers.forEach((manager) => {
             const orders = manager.retriveOrders(status)
             orders.forEach((o) => {
-                orderString = orderString + "\n" + o.toString() //todo
+                orderString = orderString + "\n" + o.toString()
             })
         })
         this.pubSocket.send([statusTopic, orderString, true])

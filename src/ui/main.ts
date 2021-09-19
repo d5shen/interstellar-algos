@@ -61,6 +61,8 @@ export class MainCLI {
             console.log("    in progress orders")
             console.log("    cancelled orders")
             console.log(" ")
+            console.log("Cancel Order command:          ")
+            console.log("    cancel order:<order id>")
             console.log(" ")
         } else if (message.toLowerCase() == "quit" || message.toLowerCase() == "exit") {
             process.exit(0)

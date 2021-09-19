@@ -5,6 +5,7 @@ import { AmmProperties } from "../AlgoExecutionService"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
+import { statusTopic } from "../configs"
 
 export enum OrderStatus {
     PENDING,
@@ -19,7 +20,7 @@ export class Order {
 
     private readonly log = Log.getLogger(Order.name)
     private static counter = 0
-    private id: string
+    private _id: string
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
     private childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private childOrderInFlight: boolean = false
@@ -27,7 +28,7 @@ export class Order {
     private createTime: string
 
     constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
-        this.id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
+        this._id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
         this._status = OrderStatus.IN_PROGRESS
         this.createTime = new Date().toLocaleString()
@@ -38,7 +39,7 @@ export class Order {
         this.log.jinfo({
             event: "Order:Check",
             params: {
-                id: this.id,
+                id: this._id,
                 quantity: this.quantity,
                 filled: this.algo.filledQuantity,
                 remaining: this.algo.remainingQuantity,
@@ -55,7 +56,7 @@ export class Order {
             this.log.jinfo({
                 event: "Order:Trade",
                 params: {
-                    id: this.id,
+                    id: this._id,
                     child: childOrder,
                 },
             })
@@ -76,6 +77,18 @@ export class Order {
 
     get status(): OrderStatus {
         return this._status
+    }
+
+    set status(status: OrderStatus) {
+        this._status = status
+    }
+
+    set algoStatus(status: AlgoStatus) {
+        this.algo.status = status
+    }
+
+    get id(): string {
+        return this._id
     }
 
     private buildTradeRecord(tradeId: string): TradeRecord {

@@ -7,7 +7,7 @@ import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
 import { AlgoExecutor } from "../algo/AlgoExecutor"
-import { Algo } from "../algo/Algo"
+import { Algo, AlgoStatus } from "../algo/Algo"
 import { orderBy } from "lodash"
 import { statusTopic } from "../configs"
 
@@ -19,6 +19,8 @@ export class OrderManager {
     private readonly log = Log.getLogger(OrderManager.name)
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
     private readonly parentOrders = new Array<Order>()
+
+    private readonly parentOrdersMap = new Map<string, Order>()
 
     constructor(readonly algoExecutor: AlgoExecutor, readonly pair: string) {}
 
@@ -36,6 +38,17 @@ export class OrderManager {
                     return order.check(ammProps)
                 })
         )
+    }
+
+    public cancelOrder(orderId: string): boolean {
+        const cancelOrderArray = this.parentOrders.filter((order) => order.id == orderId)
+        if (cancelOrderArray.length > 0) {
+            const cancelOrder = cancelOrderArray[0]
+            cancelOrder.status = OrderStatus.CANCELED
+            cancelOrder.algoStatus = AlgoStatus.CANCELED
+            return true
+        }
+        return false
     }
 
     // this is called from command line by the user somewhere
