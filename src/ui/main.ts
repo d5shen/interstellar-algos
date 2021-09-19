@@ -38,15 +38,14 @@ export class MainCLI {
         asyncReadLine()
     }
 
-    publish(message: string) {
+    publish(message: string): void {
         // message format: string eg: TWAP SUSHI-USDC BUY 30 10 3
-        // TODO: What should be the return type??
         if (this.algoServerStatus) {
             this.pubSocket.send([userInputTopic, message])
         }
     }
 
-    receive(message: string, algoServerStatus: boolean) {
+    receive(message: string, algoServerStatus: boolean): void {
         if (!this.algoServerStatus && algoServerStatus && message.length == 0) {
             // receivce heartbeat and the readInput has not been started
             this.log.info("Algo Execution Service: ready for user input")
