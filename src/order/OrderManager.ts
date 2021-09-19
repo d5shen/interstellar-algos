@@ -1,15 +1,11 @@
-import { Amm } from "../../types/ethers"
+import { AlgoExecutor } from "../algo/AlgoExecutor"
+import { Algo, AlgoStatus } from "../algo/Algo"
 import { AmmProperties } from "../AlgoExecutionService"
-import { AlgoFactory, AlgoType } from "../algo/AlgoFactory"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
-import { AlgoExecutor } from "../algo/AlgoExecutor"
-import { Algo, AlgoStatus } from "../algo/Algo"
-import { orderBy } from "lodash"
-import { statusTopic } from "../configs"
 
 export class OrderManager {
     // TODO:

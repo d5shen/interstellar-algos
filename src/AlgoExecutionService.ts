@@ -153,13 +153,13 @@ export class AlgoExecutionService {
             this.retriveOrders(OrderStatus.CANCELED)
         } else if (msg.startsWith("cancel order:")) {
             const cancelId = msg.split(":")
-            this.cancellOrder(cancelId[1].trim())
+            this.cancelOrder(cancelId[1].trim())
         } else {
             this.handleInput(msg)
         }
     }
 
-    private cancellOrder(cancelId: string) {
+    private cancelOrder(cancelId: string) {
         let cancelStatus = false
         for (var manager of this.orderManagers.values()) {
             cancelStatus = manager.cancelOrder(cancelId)

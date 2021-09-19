@@ -45,8 +45,8 @@ export class MainCLI {
             console.log("Input format:    INPUT> [Algo Type] [Pair] [BUY/SELL] [USDC Amount] [Algo Settings...]")
             console.log(" ")
             console.log("Algo Types available:")
-            console.log("    - TWAP")
-            console.log("    - POV")
+            console.log("    TWAP")
+            console.log("    POV")
             console.log(" ")
             console.log("Pair Format:  SUSHI-USDC")
             console.log(" ")
@@ -84,6 +84,7 @@ export class MainCLI {
         if (!this.algoServerStatus && algoServerStatus && message.length == 0) {
             // receivce heartbeat and the readInput has not been started
             this.log.info("Algo Execution Service: ready for user input")
+            this.log.info("Type 'help' for help and 'exit' to exit")
             this.readInput()
         }
         this.algoServerStatus = algoServerStatus

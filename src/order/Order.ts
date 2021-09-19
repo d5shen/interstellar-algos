@@ -15,9 +15,6 @@ export enum OrderStatus {
 }
 
 export class Order {
-    //  TODO:
-    //    Maybe we could fire a message event for the the child order statuses
-
     private readonly log = Log.getLogger(Order.name)
     private static counter = 0
     private _id: string
