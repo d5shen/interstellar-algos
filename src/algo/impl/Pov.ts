@@ -100,7 +100,7 @@ export class Pov extends Algo {
     }
 
     toString(): string {
-        let str = `${super.toString()}, settings:{pov: ${this.percentOfVolume}, interval: ${this.interval_in_mins}mins`
+        let str = `${super.toString()}, settings:{pov: ${this.percentOfVolume}, interval: ${this.interval_in_mins}mins}`
         if (this.maximumSize.gt(BIG_ZERO)) {
             str += `, max size:${this.maximumSize}}`
         }

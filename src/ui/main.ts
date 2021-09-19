@@ -60,6 +60,7 @@ export class MainCLI {
             console.log("Check Order status command:    ")
             console.log("    all orders")
             console.log("    in progress orders")
+            console.log("    completed orders")
             console.log("    cancelled orders")
             console.log(" ")
             console.log("Cancel Order command:          ")

@@ -145,10 +145,12 @@ export class AlgoExecutionService {
     }
 
     private interpret(msg: string) {
-        if (msg.toLowerCase() == "in progress orders") {
-            this.retriveOrders(OrderStatus.IN_PROGRESS)
-        } else if (msg.toLowerCase() == "all orders") {
+        if (msg.toLowerCase() == "all orders") {
             this.retriveOrders()
+        } else if (msg.toLowerCase() == "completed orders") {
+            this.retriveOrders(OrderStatus.COMPLETED)
+        } else if (msg.toLowerCase() == "in progress orders") {
+            this.retriveOrders(OrderStatus.IN_PROGRESS)
         } else if (msg.toLowerCase() == "cancelled orders") {
             this.retriveOrders(OrderStatus.CANCELED)
         } else if (msg.startsWith("cancel ")) {
@@ -163,7 +165,7 @@ export class AlgoExecutionService {
 
     private cancelOrder(cancelId: string) {
         try {
-            const pair = cancelId.split('.')[0]
+            const pair = cancelId.split(".")[0]
             const manager = this.orderManagers.get(this.pairs.get(pair))
             const cancelStatus = manager.cancelOrder(cancelId)
             if (cancelStatus) {
@@ -172,7 +174,7 @@ export class AlgoExecutionService {
                 this.pubSocket.send([statusTopic, `order ${cancelId} could not be canceled.`, true])
             }
         } catch (e) {
-            this.pubSocket.send([statusTopic, `order id "${cancelId}"" can't be found. Please double check. Use command "all orders" for reference`, true])
+            this.pubSocket.send([statusTopic, `order id "${cancelId}" can't be found. Please double check. Use command "all orders" for reference`, true])
         }
     }
 
