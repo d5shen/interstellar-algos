@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { formatEther, parseEther } from "@ethersproject/units"
-import Big from "big.js"
 import { Result } from "ethers/lib/utils"
+import Big from "big.js"
 
 export interface PositionChangedLog {
     trader: string

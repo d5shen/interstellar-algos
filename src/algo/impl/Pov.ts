@@ -1,4 +1,5 @@
-import { Algo, AlgoStatus } from "../Algo"
+import * as PerpUtils from "../../eth/perp/PerpUtils"
+import { Algo } from "../Algo"
 import { AlgoExecutor } from "../AlgoExecutor"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
@@ -13,6 +14,7 @@ export class Pov extends Algo {
     private percentOfVolume: Big // percent tracking the PerpFi's total volume 
     private interval: number // minimum waiting period between child orders
     private maximumSize: Big = BIG_ZERO // optional
+    private volumeByTradeTime = new Map<number, Big>()
 
     private _tradeQuantity: Big
 
@@ -28,6 +30,7 @@ export class Pov extends Algo {
                 this.maximumSize = MIN_TRADE_QUANTITY
             }
         }
+        this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
     }
 
     checkTradeCondition(ammProps: AmmProperties): boolean {
@@ -37,7 +40,9 @@ export class Pov extends Algo {
         // check if cycles since last trade > this.interval
         // check volume done since last trade 
         let tradeQuantity = BIG_ZERO
-        const volumeSinceLastTrade = BIG_ZERO // TO-DO: get actual volume
+        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime) // TO-DO: get actual volume
+        this.povLog.jinfo({ event: "VolumeSinceLastTrade", volume: volumeSinceLastTrade })
+
         const povQuantity = (volumeSinceLastTrade.mul(this.percentOfVolume))
         if (povQuantity.lt(BIG_10)) {
             return false
@@ -65,8 +70,12 @@ export class Pov extends Algo {
     
     positionChanged(trader: string, ammAddress: string, margin: BigNumber, positionNotional: BigNumber, exchangedPositionSize: BigNumber, fee: BigNumber, positionSizeAfter: BigNumber, realizedPnl: BigNumber, unrealizedPnlAfter: BigNumber, badDebt: BigNumber, liquidationPenalty: BigNumber, spotPrice: BigNumber, fundingPayment: BigNumber): void {
         if (this.ammAddress == ammAddress) {
-            const timestamp = Date.now()
-            positionNotional
+            if (!this.volumeByTradeTime.has(this.lastTradeTime)) {
+                this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
+            }
+            const volume = this.volumeByTradeTime.get(this.lastTradeTime).add(PerpUtils.fromWei(positionNotional))
+            this.volumeByTradeTime.set(this.lastTradeTime, volume)
+            this.povLog.jinfo({ event: "VolumeEvent", volume: volume })
         }
     }
 }
