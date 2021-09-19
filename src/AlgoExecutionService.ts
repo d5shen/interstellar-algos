@@ -96,9 +96,8 @@ export class AlgoExecutionService {
     async initialize(): Promise<void> {
         if (!this.initialized) {
             this.pubSocket = socket("pub")
-            this.pubSocket.bindSync(`tcp://${tcp}:${statusPort}`)
+            this.pubSocket.bind(`tcp://${tcp}:${statusPort}`)
             this.log.jinfo({ event: `status publisher bound to port ${statusPort}` })
-            this.pubSocket.send([statusTopic, "Algo Execution Service: NOT READY"])
 
             this.systemMetadata = await this.systemMetadataFactory.fetch()
             this.openAmms = await this.perpServiceReadOnly.getAllOpenAmms()
@@ -140,7 +139,7 @@ export class AlgoExecutionService {
         this.subSocket.on("message", (topic, message) => {
             this.handleInput(message.toString().trim())
         })
-        this.pubSocket.send([statusTopic, "Algo Execution Service: ready for user input"])
+        this.pubSocket.send([statusTopic, "Algo Execution Service: ready for user input", true])
     }
 
     protected loadConfigs() {
@@ -220,7 +219,12 @@ export class AlgoExecutionService {
         await this.subscribe()
         await this.printPositions()
         await this.checkOrders()
+        await this.startHeartBeat()
         await Promise.all([this.startPrechecks(), this.startExecution(), this.startSlowPolls()])
+    }
+
+    private async startHeartBeat(): Promise<void> {
+        setInterval(async () => this.pubSocket.send([statusTopic, "", true]), 1000 * pollFrequency)
     }
 
     private async startExecution(): Promise<void> {
@@ -284,13 +288,13 @@ export class AlgoExecutionService {
 
             const orderManager = this.orderManagers.get(ammAddress)
             orderManager.createOrder(side, quantity, algo)
-            this.pubSocket.send([statusTopic, `Creating order for Input: [${input}]`])
+            this.pubSocket.send([statusTopic, `Creating order for Input: [${input}]`, true])
         } catch (e) {
             this.log.jerror({
                 Reason: "Bad Input",
                 Error: e,
             })
-            this.pubSocket.send([statusTopic, `Algo Execution Service: Bad Input: [${input}]`])
+            this.pubSocket.send([statusTopic, `Algo Execution Service: Bad Input: [${input}]`, true])
         }
     }
 
