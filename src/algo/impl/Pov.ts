@@ -31,18 +31,19 @@ export class Pov extends Algo {
             }
         }
         this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
+        this.positionChanged = this.positionChanged.bind(this)
     }
 
     checkTradeCondition(ammProps: AmmProperties): boolean {
+        // check if cycles since last trade > this.interval
         if (Date.now() < this.lastTradeTime + this.interval) {
             return false
         }
-        // check if cycles since last trade > this.interval
         // check volume done since last trade 
-        let tradeQuantity = BIG_ZERO
-        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime) // TO-DO: get actual volume
-        this.povLog.jinfo({ event: "VolumeSinceLastTrade", volume: volumeSinceLastTrade })
+        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime) 
+        this.povLog.jinfo({ event: this.pair + ":VolumeSinceLastTrade", volume: volumeSinceLastTrade })
 
+        let tradeQuantity = BIG_ZERO
         const povQuantity = (volumeSinceLastTrade.mul(this.percentOfVolume))
         if (povQuantity.lt(BIG_10)) {
             return false
@@ -75,7 +76,7 @@ export class Pov extends Algo {
             }
             const volume = this.volumeByTradeTime.get(this.lastTradeTime).add(PerpUtils.fromWei(positionNotional))
             this.volumeByTradeTime.set(this.lastTradeTime, volume)
-            this.povLog.jinfo({ event: "VolumeEvent", volume: volume })
+            this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })
         }
     }
 }

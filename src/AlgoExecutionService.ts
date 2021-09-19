@@ -236,6 +236,7 @@ export class AlgoExecutionService {
             await this.printPositions()
             await this.syncNonce()
             await this.ethServiceReadOnly.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
+            this.log.jinfo({listeners: this.eventEmitter.listenerCount('PositionChanged')});
         }, 1000 * slowPollFrequency) // slower than others
     }
 
@@ -280,7 +281,7 @@ export class AlgoExecutionService {
             const ammAddress = this.pairs.get(pair)
             const ammConfig = this.configs.get(pair)
             const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
-            
+
             const orderManager = this.orderManagers.get(ammAddress)
             orderManager.createOrder(side, quantity, algo)
         } catch (e) {
