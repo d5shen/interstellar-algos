@@ -169,7 +169,7 @@ export class AlgoExecutionService {
             }
         }
         if (!cancelStatus) {
-            this.pubSocket.send([statusTopic, `order ${cancelId} can't be found. Please double check if the input is correct. Use command "all orders" for reference`, true])
+            this.pubSocket.send([statusTopic, `order id "${cancelId}"" can't be found. Please double check. Use command "all orders" for reference`, true])
         }
     }
 
