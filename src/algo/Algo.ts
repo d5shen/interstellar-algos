@@ -30,6 +30,7 @@ export abstract class Algo {
     protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void) {
         this._remainingQuantity = quantity
         this._status = AlgoStatus.IN_PROGRESS
+        this.positionChanged = this.positionChanged.bind(this)
     }
 
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()

@@ -36,7 +36,6 @@ export class Pov extends Algo {
             }
         }
         this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
-        this.positionChanged = this.positionChanged.bind(this)
     }
 
     checkTradeCondition(ammProps: AmmProperties): boolean {
@@ -101,6 +100,6 @@ export class Pov extends Algo {
     }
 
     toString(): string {
-        return `${super.toString()}, settings:{interval: ${this.interval_in_mins}mins, maximum size:${this.maximumSize}}`
+        return `${super.toString()}, settings:{pov: ${this.percentOfVolume}, interval: ${this.interval_in_mins}mins, max size:${this.maximumSize}}`
     }
 }
