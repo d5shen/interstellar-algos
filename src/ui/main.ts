@@ -63,4 +63,3 @@ export class MainCLI {
 }
 
 const cli = new MainCLI()
-// cli.readInput()
