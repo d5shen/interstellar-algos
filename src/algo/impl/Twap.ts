@@ -61,7 +61,6 @@ export class Twap extends Algo {
         return BIG_ZERO.lt(tradeQuantity)
     }
 
-    // JL - TODO handle minimum trade notional 10 USDC and adjust schedule accordingly
     private calcTradeSchedule(): Stack<Pair<number, Big>> {
         let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.quantity.div(MIN_TRADE_QUANTITY).toString())))
 

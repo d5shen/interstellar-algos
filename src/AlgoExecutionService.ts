@@ -97,7 +97,7 @@ export class AlgoExecutionService {
         if (!this.initialized) {
             this.pubSocket = socket("pub")
             this.pubSocket.bindSync(`tcp://${tcp}:${statusPort}`)
-            this.log.jinfo({event: `status publisher bound to port ${statusPort}`})
+            this.log.jinfo({ event: `status publisher bound to port ${statusPort}` })
             this.pubSocket.send([statusTopic, "Algo Execution Service: NOT READY"])
 
             this.systemMetadata = await this.systemMetadataFactory.fetch()
@@ -136,7 +136,7 @@ export class AlgoExecutionService {
         this.subSocket = socket("sub")
         this.subSocket.connect(`tcp://${tcp}:${userInputPort}`)
         this.subSocket.subscribe(userInputTopic)
-        this.log.jinfo({event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}`})
+        this.log.jinfo({ event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}` })
         this.subSocket.on("message", (topic, message) => {
             this.handleInput(message.toString().trim())
         })
@@ -236,7 +236,7 @@ export class AlgoExecutionService {
             await this.printPositions()
             await this.syncNonce()
             await this.ethServiceReadOnly.checkBlockFreshness(preflightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
-            this.log.jinfo({listeners: this.eventEmitter.listenerCount('PositionChanged')});
+            this.log.jinfo({ listeners: this.eventEmitter.listenerCount("PositionChanged") })
         }, 1000 * slowPollFrequency) // slower than others
     }
 
@@ -284,6 +284,7 @@ export class AlgoExecutionService {
 
             const orderManager = this.orderManagers.get(ammAddress)
             orderManager.createOrder(side, quantity, algo)
+            this.pubSocket.send([statusTopic, `Creating order for Input: [${input}]`])
         } catch (e) {
             this.log.jerror({
                 Reason: "Bad Input",
