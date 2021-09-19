@@ -8,7 +8,8 @@
         "compile-watch": "tsc -b --watch .",
         "build": "npm run codegen && npm run compile",
         "clean": "rm -rf ./build ./.serverless ./nyc_output",
-        "index": "env $(cat .env.production | grep -v '#') npx ts-node --files src/index.ts",
+        "server": "env $(cat .env.production | grep -v '#') npx ts-node --files src/index.ts",
+        "cli": "env $(cat .env.production | grep -v '#') npx ts-node --files src/ui/main.ts",
         "invoke-local": "sls invoke local --stage production --function arbitrageur",
         "deploy": "npm run build && sls deploy --aws-s3-accelerate --stage production",
         "fast-deploy": "npm run compile && sls deploy --aws-s3-accelerate --stage production"

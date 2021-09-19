@@ -174,7 +174,6 @@ export class AlgoExecutionService {
     }
 
     private retriveOrders(status?: OrderStatus) {
-        //TODO: should this be async?
         let orderString = "order info:"
         this.orderManagers.forEach((manager) => {
             const orders = manager.retriveOrders(status)
