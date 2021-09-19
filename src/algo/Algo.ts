@@ -1,6 +1,7 @@
 import { AlgoExecutor } from "./AlgoExecutor"
 import { AmmConfig } from "../amm/AmmConfigs"
 import { AmmProperties } from "../AlgoExecutionService"
+import { AlgoType } from "./AlgoFactory"
 import { BigNumber } from "ethers"
 import { BIG_ONE, BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
@@ -22,6 +23,8 @@ export abstract class Algo {
     protected _remainingQuantity: Big = BIG_ZERO
     protected _status: AlgoStatus = AlgoStatus.INITIALIZED
     protected failTrades = new Queue<Big>()
+    
+    readonly type: AlgoType
 
     protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void) {
         this._remainingQuantity = quantity

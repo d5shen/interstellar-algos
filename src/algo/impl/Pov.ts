@@ -1,6 +1,7 @@
 import * as PerpUtils from "../../eth/perp/PerpUtils"
 import { Algo } from "../Algo"
 import { AlgoExecutor } from "../AlgoExecutor"
+import { AlgoType } from "../AlgoFactory"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
 import { BigNumber } from "ethers"
@@ -17,6 +18,8 @@ export class Pov extends Algo {
     private volumeByTradeTime = new Map<number, Big>()
 
     private _tradeQuantity: Big
+
+    readonly type: AlgoType = AlgoType.POV
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion)
@@ -74,6 +77,7 @@ export class Pov extends Algo {
             if (!this.volumeByTradeTime.has(this.lastTradeTime)) {
                 this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
             }
+            // small race condition between sending our child order and receiving new messages but BEFORE lastTradeTime gets updated
             const volume = this.volumeByTradeTime.get(this.lastTradeTime).add(PerpUtils.fromWei(positionNotional))
             this.volumeByTradeTime.set(this.lastTradeTime, volume)
             this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })

@@ -1,9 +1,10 @@
 import * as PerpUtils from "../eth/perp/PerpUtils"
+import { Algo, AlgoStatus } from "../algo/Algo"
+import { AlgoType } from "../algo/AlgoFactory"
+import { AmmProperties } from "../AlgoExecutionService"
 import { BIG_ZERO, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
-import { Algo, AlgoStatus } from "../algo/Algo"
-import { AmmProperties } from "../AlgoExecutionService"
 
 export enum OrderStatus {
     PENDING,
@@ -13,6 +14,9 @@ export enum OrderStatus {
 }
 
 export class Order {
+    //  TODO:
+    //    Maybe we could fire a message event for the the child order statuses
+
     private readonly log = Log.getLogger(Order.name)
     private static counter = 0
     private id: string
@@ -22,7 +26,7 @@ export class Order {
     private algo: Algo
 
     constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
-        this.id = this.pair + "." + Side[this.direction] + "." + Order.counter++
+        this.id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
         this._status = OrderStatus.IN_PROGRESS
     }
