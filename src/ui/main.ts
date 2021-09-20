@@ -31,10 +31,10 @@ export class MainCLI {
 
         setInterval(async () => {
             if (this.algoServerStatus && this.secondsSinceLastHeartBeat > 60) {
-                this.logHelper("algo server has stopped working for at least 60 seconds!")
+                this.logHelper("Algo server has stopped working for at least 60 seconds!")
                 this.algoServerStatus = false
             } else if (this.secondsSinceLastHeartBeat >= 300 && this.secondsSinceLastHeartBeat % 60 == 0) {
-                this.logHelper(`algo server has stopped working for at least ${this.secondsSinceLastHeartBeat}! Please check server status!`)
+                this.logHelper(`Algo server has stopped working for at least ${this.secondsSinceLastHeartBeat} seconds! Please check server status!`)
             }
             this.secondsSinceLastHeartBeat += 1
         }, 1000)
