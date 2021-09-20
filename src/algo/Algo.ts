@@ -113,6 +113,6 @@ export abstract class Algo {
     }
 
     toString(): string {
-        return `${AlgoType[this.type].padEnd(4)}|${this.quantity.toPrecision(3).padEnd(8)}|${this.remainingQuantity.toPrecision(3).padEnd(8)}`
+        return `${AlgoType[this.type].padEnd(4)}|${this.quantity.toPrecision(3).padEnd(8)}|${this.remainingQuantity.toPrecision(3).padEnd(9)}`
     }
 }
