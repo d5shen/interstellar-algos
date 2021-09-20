@@ -174,7 +174,7 @@ export class AlgoExecutionService {
                 this.pubSocket.send([statusTopic, `order ${cancelId} could not be canceled.`, true])
             }
         } catch (e) {
-            this.pubSocket.send([statusTopic, `order id "${cancelId}" can't be found. Please double check. Use command "all orders" for reference`, true])
+            this.pubSocket.send([statusTopic, `order "${cancelId}"" could not be found. Use command "all orders" for reference`, true])
         }
     }
 
