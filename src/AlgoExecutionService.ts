@@ -6,7 +6,7 @@ import { pollFrequency, configPath, slowPollFrequency, preflightCheck, tcp, user
 import { AlgoExecutor } from "./algo/AlgoExecutor"
 import { AlgoFactory, AlgoType } from "./algo/AlgoFactory"
 import { AmmConfig, BigKeys, BigTopLevelKeys } from "./amm/AmmConfigs"
-import { BIG_10, BIG_ZERO, Side } from "./Constants"
+import { BIG_10, BIG_ZERO, PARENT_ORDER_TABLE_HEADER, Side } from "./Constants"
 import { Amm } from "../types/ethers"
 import { BigNumber } from "@ethersproject/bignumber"
 import { ERC20Service } from "./eth/ERC20Service"
@@ -179,7 +179,7 @@ export class AlgoExecutionService {
     }
 
     private retriveOrders(status?: OrderStatus) {
-        let orderString = "order info:"
+        let orderString = PARENT_ORDER_TABLE_HEADER
         this.orderManagers.forEach((manager) => {
             const orders = manager.retriveOrders(status)
             orders.forEach((o) => {
@@ -334,7 +334,7 @@ export class AlgoExecutionService {
             const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
 
             const orderManager = this.orderManagers.get(ammAddress)
-            const order = orderManager.createOrder(side, quantity, algo)
+            const order = orderManager.createOrder(side, quantity, algo, this.pubSocket)
             this.pubSocket.send([statusTopic, `Created order for input: [${input}], id: ${order.id}`, true])
         } catch (e) {
             this.log.jerror({

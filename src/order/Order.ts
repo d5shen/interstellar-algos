@@ -2,10 +2,11 @@ import * as PerpUtils from "../eth/perp/PerpUtils"
 import { Algo, AlgoStatus } from "../algo/Algo"
 import { AlgoType } from "../algo/AlgoFactory"
 import { AmmProperties } from "../AlgoExecutionService"
-import { BIG_ZERO, Side } from "../Constants"
+import { BIG_ZERO, CHILD_ORDER_TABLE_HEADER, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
 import { statusTopic } from "../configs"
+import { Socket } from "zeromq"
 
 export enum OrderStatus {
     PENDING,
@@ -23,10 +24,12 @@ export class Order {
     private childOrderInFlight: boolean = false
     private algo: Algo
     private createTime: string
+    private pubSocket: Socket
 
-    constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
+    constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo, pubSocket: Socket) {
         this._id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
+        this.pubSocket = pubSocket
         this._status = OrderStatus.IN_PROGRESS
         this.createTime = new Date().toLocaleString()
     }
@@ -59,7 +62,7 @@ export class Order {
             })
 
             await this.algo.execute(ammProps, childOrder)
-
+            this.pubSocket.send([statusTopic, "Traded " + CHILD_ORDER_TABLE_HEADER + "\n" + childOrder.toString(), true])
             this.childOrderInFlight = false
         }
 
@@ -98,7 +101,7 @@ export class Order {
     }
 
     toString(): string {
-        return `id:${this.id}, created:${this.createTime}, algo:${this.algo}, status:${OrderStatus[this._status]}`
+        return `${this.id.padEnd(23)}|${this.createTime.padEnd(23)}|${this.algo.toString()}|${OrderStatus[this._status].toString().padEnd(15)}|`
     }
 }
 
@@ -144,5 +147,38 @@ export class TradeRecord {
     onFail(): void {
         this.state = "FAILED"
         tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Failed] ` + JSON.stringify(this))
+    }
+
+    toString(): string {
+        return (
+            `${this.tradeId.padEnd(25)}|${new Date(this.timestamp).toLocaleString().padEnd(23)}|` +
+            `${this.size.toPrecision(3).padEnd(8)}|${this.notional.toPrecision(3).padEnd(8)}|${this.price.toPrecision(4).padEnd(8)}|` +
+            `${this.ppExecSize.toPrecision(3).padEnd(10)}|${this.ppExecPrice.toPrecision(4).padEnd(10)}|${this.ppTxStatus.toString().padEnd(6)}|`
+        )
+        // tradeId: string | null = null
+        // state: string = "PENDING"
+        // pair: string | null = null
+        // side: Side | null = null
+        // // info at decision time
+        // timestamp: number | null = null
+        // size: Big = BIG_ZERO // quantity contracts
+        // notional: Big = BIG_ZERO
+        // price: Big | null = null // expected execution price
+        // // amm blockchain txn info
+        // ppState: string = "UNINIT"
+        // ppSentTimestamp: number | null = null // time when creating tx
+        // ppAckTimestamp: number | null = null // time when tx received by blockchain
+        // ppFillTimestamp: number | null = null // time when tx confirmed
+        // ppGasPx: Big = BIG_ZERO
+        // ppBaseAssetAmountLimit: Big | null = null
+        // ppExecSize: Big = BIG_ZERO
+        // ppExecPrice: Big | null = null // actual execution price
+        // ppMaxSlip: Big = BIG_ZERO
+        // ppTxHash: string | null = null
+        // ppTxBlockNumber: number | null = null
+        // ppTxGasLimit: Big | null = null
+        // ppTxGasUsed: Big = BIG_ZERO
+        // ppTxStatus: number | undefined = undefined // false if txn reverted, true if successful
+        // ppPositionChangedLog: PerpUtils.PositionChangedLog | null = null
     }
 }

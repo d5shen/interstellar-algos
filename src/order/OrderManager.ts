@@ -6,6 +6,7 @@ import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
+import { Socket } from "zeromq"
 
 export class OrderManager {
     // TODO:
@@ -48,8 +49,8 @@ export class OrderManager {
     }
 
     // this is called from command line by the user somewhere
-    public createOrder(direction: Side, quantity: Big, algo: Algo): Order {
-        const o = new Order(this.pair, direction, quantity, algo)
+    public createOrder(direction: Side, quantity: Big, algo: Algo, pubSocket: Socket): Order {
+        const o = new Order(this.pair, direction, quantity, algo, pubSocket)
         this.parentOrders.push(o)
         return o
     }

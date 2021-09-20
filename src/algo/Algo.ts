@@ -8,6 +8,7 @@ import { Log } from "../Log"
 import { Queue } from "../DataStructure"
 import { TradeRecord } from "../order/Order"
 import Big from "big.js"
+import { Socket } from "zeromq"
 
 export enum AlgoStatus {
     INITIALIZED,
@@ -112,6 +113,6 @@ export abstract class Algo {
     }
 
     toString(): string {
-        return `${AlgoType[this.type]}, quantity: ${this.quantity}, remaining:${this.remainingQuantity}`
+        return `${AlgoType[this.type].padEnd(4)}|${this.quantity.toPrecision(3).padEnd(8)}|${this.remainingQuantity.toPrecision(3).padEnd(8)}`
     }
 }

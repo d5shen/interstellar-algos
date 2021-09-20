@@ -8,6 +8,7 @@ import { BigNumber } from "ethers"
 import { BIG_10, BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
 import { Log } from "../../Log"
 import Big from "big.js"
+import { Socket } from "zeromq"
 
 export class Pov extends Algo {
     private readonly povLog = Log.getLogger(Pov.name)
@@ -98,14 +99,14 @@ export class Pov extends Algo {
             this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })
         }
     }
+    // const sttingStr = `{total time:${this.time_in_mins}mins, interval:${this.interval_in_mins}mins}`
+    // return `${super.toString()}|` + sttingStr.padEnd(60)
 
     toString(): string {
-        let str = `${super.toString()}, settings:{pov: ${this.percentOfVolume}, interval: ${this.interval_in_mins}mins`
+        let settingStr = `pov:${this.percentOfVolume}, interval:${this.interval_in_mins}mins`
         if (this.maximumSize.gt(BIG_ZERO)) {
-            str += `, max size:${this.maximumSize}}`
-        } else {
-            str += "}"
+            settingStr += `, max size:${this.maximumSize}`
         }
-        return str
+        return `${super.toString()}|` + settingStr.padEnd(45)
     }
 }
