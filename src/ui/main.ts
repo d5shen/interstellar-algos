@@ -3,6 +3,7 @@ import * as readline from "readline"
 import { Socket, socket } from "zeromq"
 import { statusPort, statusTopic, tcp, userInputPort, userInputTopic, initialTimeOut } from "../configs"
 import { Log } from "../Log"
+import { flatMap } from "lodash"
 
 export class MainCLI {
     private log = Log.getLogger(MainCLI.name)
@@ -10,6 +11,7 @@ export class MainCLI {
     private subSocket: Socket
     private cmd: readline.Interface
     private algoServerStatus: boolean = false
+    private secondsSinceLastHeartBeat: number = 0
 
     constructor() {
         this.pubSocket = socket("pub")
@@ -26,6 +28,16 @@ export class MainCLI {
         })
 
         this.cmd = readline.createInterface({ input: process.stdin, output: process.stdout })
+
+        setInterval(async () => {
+            if (this.algoServerStatus && this.secondsSinceLastHeartBeat > 60) {
+                this.logHelper("algo server has stopped working for at least 60 seconds!")
+                this.algoServerStatus = false
+            } else if (this.secondsSinceLastHeartBeat >= 300 && this.secondsSinceLastHeartBeat % 60 == 0) {
+                this.logHelper(`algo server has stopped working for at least ${this.secondsSinceLastHeartBeat}! Please check server status!`)
+            }
+            this.secondsSinceLastHeartBeat += 1
+        }, 1000)
     }
 
     readInput(): void {
@@ -91,12 +103,17 @@ export class MainCLI {
             this.readInput()
         }
         this.algoServerStatus = algoServerStatus
+        this.secondsSinceLastHeartBeat = 0
         if (message.length > 0) {
-            readline.clearLine(process.stdout, 0)
-            readline.cursorTo(process.stdout, 0)
-            this.log.info(message)
+            this.logHelper(message)
             this.readInput()
         }
+    }
+
+    private logHelper(message: string): void {
+        readline.clearLine(process.stdout, 0)
+        readline.cursorTo(process.stdout, 0)
+        this.log.info(message)
     }
 }
 
