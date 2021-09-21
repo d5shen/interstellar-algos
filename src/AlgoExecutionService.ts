@@ -26,6 +26,7 @@ import { Wallet } from "ethers"
 import Big from "big.js"
 import { Order, OrderStatus } from "./order/Order"
 import { orderBy } from "lodash"
+import { StatusPublisher } from "./ui/StatusUtil"
 
 export class AmmProperties {
     readonly pair: string
@@ -64,13 +65,14 @@ export class AlgoExecutionService {
     protected openAmms!: Amm[]
     protected initialized = false
     protected lastPrecheck = false
-    protected pubSocket: Socket
     protected subSocket: Socket
     protected eventEmitter: EventEmitter
     protected amms = new Map<string, AmmProperties>() // key = AMM Contract Address
     protected pairs = new Map<string, string>() // key = pair -> address
     protected orderManagers = new Map<string, OrderManager>() // key = AMM Contract Address
     protected configs = new Map<string, AmmConfig>() // key = AMM Pair Name
+
+    protected statusPublisher = StatusPublisher.getInstance()
 
     constructor() {
         this.systemMetadataFactory = new SystemMetadataFactory(this.serverProfile)
@@ -97,8 +99,6 @@ export class AlgoExecutionService {
 
     async initialize(): Promise<void> {
         if (!this.initialized) {
-            this.pubSocket = socket("pub")
-            this.pubSocket.bind(`tcp://${tcp}:${statusPort}`)
             this.log.jinfo({ event: `status publisher bound to port ${statusPort}` })
 
             this.systemMetadata = await this.systemMetadataFactory.fetch()
@@ -141,7 +141,7 @@ export class AlgoExecutionService {
         this.subSocket.on("message", (topic, message) => {
             this.interpret(message.toString().trim())
         })
-        this.pubSocket.send([statusTopic, "Algo Execution Service: ready for user input", true])
+        this.statusPublisher.publish("Algo Execution Service: ready for user input", true)
     }
 
     private interpret(msg: string) {
@@ -169,24 +169,25 @@ export class AlgoExecutionService {
             const manager = this.orderManagers.get(this.pairs.get(pair))
             const cancelStatus = manager.cancelOrder(cancelId)
             if (cancelStatus) {
-                this.pubSocket.send([statusTopic, `order ${cancelId} is canceled successfully.`, true])
+                this.statusPublisher.publish(`order ${cancelId} is canceled successfully.`, true)
             } else {
-                this.pubSocket.send([statusTopic, `order ${cancelId} could not be canceled.`, true])
+                this.statusPublisher.publish(`order ${cancelId} could not be canceled.`, true)
             }
         } catch (e) {
-            this.pubSocket.send([statusTopic, `order "${cancelId}"" could not be found. Use command "all orders" for reference`, true])
+            this.statusPublisher.publish(`order "${cancelId}"" could not be found. Use command "all orders" for reference`, true)
         }
     }
 
     private retriveOrders(status?: OrderStatus) {
-        let orderString = PARENT_ORDER_TABLE_HEADER
+        let orderString = ""
+
         this.orderManagers.forEach((manager) => {
             const orders = manager.retriveOrders(status)
             orders.forEach((o) => {
                 orderString = orderString + "\n" + o.toString()
             })
         })
-        this.pubSocket.send([statusTopic, orderString, true])
+        this.statusPublisher.publish(orderString.length > 0 ? PARENT_ORDER_TABLE_HEADER + "\n" + orderString : "Parent Order:\n" + orderString, true)
     }
 
     protected loadConfigs() {
@@ -271,7 +272,7 @@ export class AlgoExecutionService {
     }
 
     private async startHeartBeat(): Promise<void> {
-        setInterval(async () => this.pubSocket.send([statusTopic, "", true]), 1000 * pollFrequency)
+        setInterval(async () => this.statusPublisher.publish("", true), 1000 * pollFrequency)
     }
 
     private async startExecution(): Promise<void> {
@@ -334,14 +335,14 @@ export class AlgoExecutionService {
             const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
 
             const orderManager = this.orderManagers.get(ammAddress)
-            const order = orderManager.createOrder(side, quantity, algo, this.pubSocket)
-            this.pubSocket.send([statusTopic, `Created order for input: [${input}], id: ${order.id}`, true])
+            const order = orderManager.createOrder(side, quantity, algo)
+            this.statusPublisher.publish(`Created order for input: [${input}], id: ${order.id}`, true)
         } catch (e) {
             this.log.jerror({
                 Reason: "Bad Input",
                 Error: e,
             })
-            this.pubSocket.send([statusTopic, `Algo Execution Service: Bad Input: [${input}]`, true])
+            this.statusPublisher.publish(`Algo Execution Service: Bad Input: [${input}]`, true)
         }
     }
 

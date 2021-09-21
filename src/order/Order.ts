@@ -7,6 +7,7 @@ import { Log } from "../Log"
 import Big from "big.js"
 import { statusTopic } from "../configs"
 import { Socket } from "zeromq"
+import { StatusPublisher } from "../ui/StatusUtil"
 
 export enum OrderStatus {
     PENDING,
@@ -24,12 +25,11 @@ export class Order {
     private childOrderInFlight: boolean = false
     private algo: Algo
     private createTime: string
-    private pubSocket: Socket
+    private pubSocket = StatusPublisher.getInstance()
 
-    constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo, pubSocket: Socket) {
+    constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
         this._id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
-        this.pubSocket = pubSocket
         this._status = OrderStatus.IN_PROGRESS
         this.createTime = new Date().toLocaleString()
     }
@@ -62,7 +62,7 @@ export class Order {
             })
 
             await this.algo.execute(ammProps, childOrder)
-            this.pubSocket.send([statusTopic, "Traded " + CHILD_ORDER_TABLE_HEADER + "\n" + childOrder.toString(), true])
+            this.pubSocket.publish("Traded " + CHILD_ORDER_TABLE_HEADER + "\n" + childOrder.toString(), true)
             this.childOrderInFlight = false
         }
 

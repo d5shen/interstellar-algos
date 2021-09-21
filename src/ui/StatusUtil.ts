@@ -2,7 +2,7 @@ import { Socket, socket } from "zeromq"
 import { statusPort, statusTopic, tcp } from "../configs"
 import { Log } from "../Log"
 
-class StatusPublisher {
+export class StatusPublisher {
     protected static readonly log = Log.getLogger(StatusPublisher.name)
     private static instance: StatusPublisher
     private static pubSocket: Socket = socket("pub")
