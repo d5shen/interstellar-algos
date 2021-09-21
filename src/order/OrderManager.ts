@@ -6,7 +6,6 @@ import { Mutex, withTimeout } from "async-mutex"
 import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
-import { Socket } from "zeromq"
 
 export class OrderManager {
     // TODO:

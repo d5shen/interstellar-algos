@@ -1,7 +1,6 @@
 import "../init"
 import * as AmmUtils from "../amm/AmmUtils"
 import * as PerpUtils from "../eth/perp/PerpUtils"
-import { Amm } from "../../types/ethers"
 import { BIG_10, Side } from "../Constants"
 import { GasService, NonceService } from "../amm/AmmUtils"
 import { Log } from "../Log"

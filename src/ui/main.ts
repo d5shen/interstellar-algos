@@ -3,7 +3,6 @@ import * as readline from "readline"
 import { Socket, socket } from "zeromq"
 import { statusPort, statusTopic, tcp, userInputPort, userInputTopic, initialTimeOut } from "../configs"
 import { Log } from "../Log"
-import { flatMap } from "lodash"
 
 export class MainCLI {
     private log = Log.getLogger(MainCLI.name)

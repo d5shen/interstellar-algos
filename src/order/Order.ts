@@ -5,8 +5,6 @@ import { AmmProperties } from "../AlgoExecutionService"
 import { BIG_ZERO, CHILD_ORDER_TABLE_HEADER, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
-import { statusTopic } from "../configs"
-import { Socket } from "zeromq"
 import { StatusPublisher } from "../ui/StatusUtil"
 
 export enum OrderStatus {
@@ -50,7 +48,7 @@ export class Order {
         if (!this.childOrderInFlight && this.algo.checkTradeCondition(ammProps)) {
             this.childOrderInFlight = true
 
-            // child id will parent order id + current child order size + uuid
+            // child id will parent order id + current child order size
             const childOrder = this.buildTradeRecord(this.id + "." + this._childOrders.size)
             this._childOrders.set(childOrder.tradeId, childOrder) // childOrder will be fully populated after algo execute
             this.log.jinfo({

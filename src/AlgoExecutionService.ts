@@ -24,8 +24,6 @@ import { Service } from "typedi"
 import { Socket, socket } from "zeromq"
 import { Wallet } from "ethers"
 import Big from "big.js"
-import { Order, OrderStatus } from "./order/Order"
-import { orderBy } from "lodash"
 import { StatusPublisher } from "./ui/StatusUtil"
 
 export class AmmProperties {
