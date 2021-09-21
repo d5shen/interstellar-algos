@@ -21,7 +21,7 @@ export class Order {
     private static counter = 0
     private _id: string
     private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
-    private childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
+    private _childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private childOrderInFlight: boolean = false
     private algo: Algo
     private createTime: string
@@ -51,8 +51,8 @@ export class Order {
             this.childOrderInFlight = true
 
             // child id will parent order id + current child order size + uuid
-            const childOrder = this.buildTradeRecord(this.id + "." + this.childOrders.size)
-            this.childOrders.set(childOrder.tradeId, childOrder) // childOrder will be fully populated after algo execute
+            const childOrder = this.buildTradeRecord(this.id + "." + this._childOrders.size)
+            this._childOrders.set(childOrder.tradeId, childOrder) // childOrder will be fully populated after algo execute
             this.log.jinfo({
                 event: "Order:Trade",
                 params: {
@@ -89,6 +89,10 @@ export class Order {
 
     get id(): string {
         return this._id
+    }
+
+    get childOrders(): Map<string, TradeRecord> {
+        return this._childOrders
     }
 
     private buildTradeRecord(tradeId: string): TradeRecord {
@@ -152,33 +156,8 @@ export class TradeRecord {
     toString(): string {
         return (
             `${this.tradeId.padEnd(25)}|${new Date(this.timestamp).toLocaleString().padEnd(23)}|` +
-            `${this.size.toPrecision(3).padEnd(8)}|${this.notional.toPrecision(3).padEnd(8)}|${this.price.toPrecision(4).padEnd(8)}|` +
-            `${this.ppExecSize.toPrecision(3).padEnd(10)}|${this.ppExecPrice.toPrecision(4).padEnd(10)}|${this.ppTxStatus.toString().padEnd(6)}|`
+            `${this.notional.toPrecision(3).padEnd(8)}|${this.ppExecSize.toPrecision(3).padEnd(10)}|${this.ppExecPrice.toPrecision(4).padEnd(10)}|` +
+            `${(this.slippage.mul(Big(10000)).toPrecision(4) + "bps").padEnd(11)}|`
         )
-        // tradeId: string | null = null
-        // state: string = "PENDING"
-        // pair: string | null = null
-        // side: Side | null = null
-        // // info at decision time
-        // timestamp: number | null = null
-        // size: Big = BIG_ZERO // quantity contracts
-        // notional: Big = BIG_ZERO
-        // price: Big | null = null // expected execution price
-        // // amm blockchain txn info
-        // ppState: string = "UNINIT"
-        // ppSentTimestamp: number | null = null // time when creating tx
-        // ppAckTimestamp: number | null = null // time when tx received by blockchain
-        // ppFillTimestamp: number | null = null // time when tx confirmed
-        // ppGasPx: Big = BIG_ZERO
-        // ppBaseAssetAmountLimit: Big | null = null
-        // ppExecSize: Big = BIG_ZERO
-        // ppExecPrice: Big | null = null // actual execution price
-        // ppMaxSlip: Big = BIG_ZERO
-        // ppTxHash: string | null = null
-        // ppTxBlockNumber: number | null = null
-        // ppTxGasLimit: Big | null = null
-        // ppTxGasUsed: Big = BIG_ZERO
-        // ppTxStatus: number | undefined = undefined // false if txn reverted, true if successful
-        // ppPositionChangedLog: PerpUtils.PositionChangedLog | null = null
     }
 }

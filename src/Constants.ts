@@ -25,6 +25,6 @@ export enum Side {
     SELL,
 }
 
-export const CHILD_ORDER_TABLE_HEADER = "Child Order:\n" + `${"id".padEnd(25)}|${"created".padEnd(23)}|${"size".padEnd(8)}|${"notional".padEnd(8)}|` + `${"price".padEnd(8)}|${"exec size".padEnd(10)}|${"exec size".padEnd(10)}|${"status".padEnd(6)}|`
+export const CHILD_ORDER_TABLE_HEADER = "Child Order:\n" + `${"id".padEnd(25)}|${"created".padEnd(23)}|${"notional".padEnd(8)}|${"exec size".padEnd(10)}|${"exec price".padEnd(10)}|${"slippage".padEnd(11)}|`
 
 export const PARENT_ORDER_TABLE_HEADER = "Parent Order:\n" + `${"id".padEnd(23)}|${"created".padEnd(23)}|${"algo".padEnd(4)}|${"quantity".padEnd(8)}|${"remaining".padEnd(9)}|${"settings".padEnd(45)}|${"status".padEnd(15)}|`

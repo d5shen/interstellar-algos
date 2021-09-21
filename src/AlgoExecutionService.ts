@@ -158,6 +158,9 @@ export class AlgoExecutionService {
             for (let i = 1; i < cancelId.length; i++) {
                 this.cancelOrder(cancelId[i].trim())
             }
+        } else if (msg.startsWith("find ")) {
+            const conditions = msg.split(" ").slice(1)
+            this.findOrders(conditions)
         } else {
             this.handleInput(msg)
         }
@@ -178,6 +181,17 @@ export class AlgoExecutionService {
         }
     }
 
+    private findOrders(conditions: string[]) {
+        let orderString = ""
+        this.orderManagers.forEach((manager) => {
+            const orders = manager.findOrders(conditions)
+            orders.forEach((o) => {
+                orderString = orderString + "\n" + o.toString()
+            })
+        })
+        this.statusPublisher.publish(orderString.length > 0 ? PARENT_ORDER_TABLE_HEADER + orderString : "Parent Order:\n" + orderString, true)
+    }
+
     private retriveOrders(status?: OrderStatus) {
         let orderString = ""
 
@@ -187,7 +201,7 @@ export class AlgoExecutionService {
                 orderString = orderString + "\n" + o.toString()
             })
         })
-        this.statusPublisher.publish(orderString.length > 0 ? PARENT_ORDER_TABLE_HEADER + "\n" + orderString : "Parent Order:\n" + orderString, true)
+        this.statusPublisher.publish(orderString.length > 0 ? PARENT_ORDER_TABLE_HEADER + orderString : "Parent Order:\n" + orderString, true)
     }
 
     protected loadConfigs() {

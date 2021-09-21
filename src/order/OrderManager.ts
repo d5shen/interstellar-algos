@@ -62,4 +62,15 @@ export class OrderManager {
             return this.parentOrders
         }
     }
+
+    public findOrders(conditons: string[]): Array<Order> {
+        return this.parentOrders.filter((order) => {
+            for (const condition of conditons) {
+                if (!order.id.includes(condition)) {
+                    return false
+                }
+            }
+            return true
+        })
+    }
 }

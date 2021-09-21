@@ -35,9 +35,9 @@ export class AlgoExecutor {
         const safeGasPrice = this.gasService.get()
         const nonceService = NonceService.getInstance(this.wallet)
         const amount = quoteAssetAmount.div(leverage)
-        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: {pair: pair, side: Side[side], quoteAssetAmount: quoteAssetAmount} })
+        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Wait", details: { pair: pair, side: Side[side], quoteAssetAmount: quoteAssetAmount } })
         const release = await nonceService.mutex.acquire()
-        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: {pair: pair, side: Side[side], quoteAssetAmount: quoteAssetAmount} })
+        this.log.jinfo({ event: "TRADE:sendChildOrder:NonceMutex:Acquired", details: { pair: pair, side: Side[side], quoteAssetAmount: quoteAssetAmount } })
         let tx: any
         try {
             childOrder.ppGasPx = Big(safeGasPrice.toString())
@@ -103,10 +103,6 @@ export class AlgoExecutor {
             childOrder.ppExecPrice = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
             childOrder.slippage = childOrder.ppExecPrice.sub(childOrder.price).div(childOrder.price)
             childOrder.onSuccess()
-
-            // TODO:
-            // should update the parent order with details
-            // the details will be modified in memory, hence the original details obj pass into this funciton will also be modified
 
             this.log.jinfo({
                 event: `${Side[side]}:TRADE:sendChildOrder:PASSED`,
