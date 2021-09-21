@@ -25,6 +25,7 @@ import { Socket, socket } from "zeromq"
 import { Wallet } from "ethers"
 import Big from "big.js"
 import { StatusPublisher } from "./ui/StatusUtil"
+import { OrderStatus } from "./order/Order"
 
 export class AmmProperties {
     readonly pair: string
