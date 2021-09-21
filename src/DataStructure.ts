@@ -1,5 +1,3 @@
-import { Comparator } from "lodash"
-
 export class Stack<T> {
     _store: T[] = []
 
