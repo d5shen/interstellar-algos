@@ -157,7 +157,7 @@ export class TradeRecord {
         return (
             `${this.tradeId.padEnd(25)}|${new Date(this.timestamp).toLocaleString().padEnd(23)}|` +
             `${this.notional.toPrecision(3).padEnd(8)}|${this.ppExecSize.toPrecision(3).padEnd(10)}|${this.ppExecPrice.toPrecision(4).padEnd(10)}|` +
-            `${(this.slippage.mul(Big(10000)).toPrecision(4) + "bps").padEnd(11)}|`
+            `${(this.slippage.mul(Big(10000)).abs().toPrecision(4) + "bps").padEnd(11)}|`
         )
     }
 }
