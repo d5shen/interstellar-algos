@@ -8,7 +8,6 @@ import { Log } from "../Log"
 import { Queue } from "../DataStructure"
 import { TradeRecord } from "../order/Order"
 import Big from "big.js"
-import { Socket } from "zeromq"
 
 export enum AlgoStatus {
     INITIALIZED,
@@ -28,7 +27,16 @@ export abstract class Algo {
 
     readonly type: AlgoType
 
-    protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void, readonly callbackOnCancel: () => void) {
+    protected constructor(
+        readonly algoExecutor: AlgoExecutor,
+        readonly ammAddress: string,
+        readonly pair: string,
+        readonly direction: Side,
+        readonly quantity: Big,
+        readonly ammConfig: AmmConfig,
+        readonly callbackOnCompletion: () => void,
+        readonly callbackOnCancel: () => void
+    ) {
         this._remainingQuantity = quantity
         this._status = AlgoStatus.IN_PROGRESS
         this.positionChanged = this.positionChanged.bind(this)

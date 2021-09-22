@@ -9,7 +9,6 @@ import { BIG_10, BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
 import { Log } from "../../Log"
 import { Mutex } from "async-mutex"
 import Big from "big.js"
-import { StatusPublisher } from "../../ui/StatusPublisher"
 
 export class Pov extends Algo {
     private readonly povLog = Log.getLogger(Pov.name)

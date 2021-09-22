@@ -12,8 +12,6 @@ export class OrderManager {
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
     private readonly parentOrders = new Array<Order>()
 
-    private readonly parentOrdersMap = new Map<string, Order>()
-
     constructor(readonly algoExecutor: AlgoExecutor, readonly pair: string) {}
 
     // do we need a mutex to lock the parentOrders or just a buffer and flush?
@@ -42,7 +40,7 @@ export class OrderManager {
         return false
     }
 
-    // this is called from command line by the user somewhere
+    // this is called from command line by the user
     public createOrder(direction: Side, quantity: Big, algo: Algo): Order {
         const o = new Order(this.pair, direction, quantity, algo)
         this.parentOrders.push(o)
