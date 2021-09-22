@@ -59,13 +59,18 @@ export abstract class Algo {
             this.lastTradeTime = Date.now()
             if (this._remainingQuantity.lte(BIG_ZERO)) {
                 this._status = AlgoStatus.COMPLETED
-                this.callbackOnCompletion()
+                this.complete()
             }
         } catch (e) {
             this.failedTrades.push(childOrder)
         }
 
         return this._status
+    }
+
+    complete(): void {
+        this._status = AlgoStatus.COMPLETED
+        this.callbackOnCompletion()
     }
 
     cancel(): void {

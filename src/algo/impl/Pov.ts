@@ -16,7 +16,7 @@ export class Pov extends Algo {
     readonly mutex = new Mutex()
 
     private percentOfVolume: Big // percent tracking the PerpFi's total volume
-    private interval_in_mins: number
+    private interval_in_mins: number // minimum waiting period (in mins) between child orders
     private interval: number // minimum waiting period between child orders
     private maximumSize: Big = BIG_ZERO // optional
     private volumeByTradeTime = new Map<number, Big>()
@@ -27,9 +27,9 @@ export class Pov extends Algo {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion, callbackOnCancel)
         this.percentOfVolume = Big(algoSettings.POV)
         this.interval_in_mins = algoSettings.INTERVAL
-        this.interval = algoSettings.INTERVAL * 60 * 1000 // user inputs in minutes
+        this.interval = algoSettings.INTERVAL * 60 * 1000 // user input number is in minutes
 
-        // don't be stupid and set a tiny max size
+        // set min max size to MIN_TRADE_QUANTITY
         if (algoSettings.MAXIMUM_SIZE) {
             this.maximumSize = Big(algoSettings.MAXIMUM_SIZE)
             if (this.maximumSize.lt(MIN_TRADE_QUANTITY)) {

@@ -7,7 +7,8 @@ import { BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
 import { Log } from "../../Log"
 import { Pair, Stack } from "../../DataStructure"
 import Big from "big.js"
-import { Socket } from "zeromq"
+import { StatusPublisher } from "../../ui/StatusPublisher"
+import { pollFrequency } from "../../configs"
 
 export class Twap extends Algo {
     private readonly twapLog = Log.getLogger(Twap.name)
@@ -23,7 +24,16 @@ export class Twap extends Algo {
     private intervalInMinutes: number
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
-        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {}, () => {})
+        super(
+            algoExecutor,
+            ammAddress,
+            pair,
+            direction,
+            quantity,
+            ammConfig,
+            () => {},
+            () => {}
+        )
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL
@@ -34,18 +44,13 @@ export class Twap extends Algo {
 
     checkTradeCondition(ammProps: AmmProperties): boolean {
         if (this.tradeSchedule.size() == 0 && this.failedTrades.size() == 0) {
-            // NO MORE SCHEULED TRADED OR FAIL TRADES
+            // no more scheduled or failed trades
             this._status = AlgoStatus.COMPLETED
             return false
         }
 
-        if (this.timeElapsed > 3 * this.time) {
-            this._status = AlgoStatus.FAILED
-            throw new Error(`executing Twap Algo time is way pass the schedule time. The algo is forced to completed. The remaining quantity is ${this.remainingQuantity}.`)
-        }
-
         if (this.timeElapsed > this.time && this._status != AlgoStatus.COMPLETED) {
-            this.twapLog.warn(`total time cycle elpsae ${this.timeElapsed} since start of algo, but the algo is not yet completed. The config time cycle is ${this.time}`)
+            StatusPublisher.getInstance().publish(`total time cycle elpsae ${(this.timeElapsed * pollFrequency) / 60}mins since start of algo, but the algo is not yet completed. The config time is ${this.timeInMinutes}mins`, true)
         }
 
         let tradeQuantity = BIG_ZERO
