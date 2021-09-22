@@ -7,12 +7,13 @@ import { AmmProperties } from "../../AlgoExecutionService"
 import { BigNumber } from "ethers"
 import { BIG_10, BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
 import { Log } from "../../Log"
+import { Mutex } from "async-mutex"
 import Big from "big.js"
-import { Socket } from "zeromq"
 
 export class Pov extends Algo {
     private readonly povLog = Log.getLogger(Pov.name)
     readonly type: AlgoType = AlgoType.POV
+    readonly mutex = new Mutex()
 
     private percentOfVolume: Big // percent tracking the PerpFi's total volume
     private interval_in_mins: number
@@ -73,7 +74,7 @@ export class Pov extends Algo {
         return this._tradeQuantity
     }
 
-    positionChanged(
+    async positionChanged(
         trader: string,
         ammAddress: string,
         margin: BigNumber,
@@ -87,15 +88,20 @@ export class Pov extends Algo {
         liquidationPenalty: BigNumber,
         spotPrice: BigNumber,
         fundingPayment: BigNumber
-    ): void {
+    ): Promise<void> {
         if (this.ammAddress == ammAddress) {
-            if (!this.volumeByTradeTime.has(this.lastTradeTime)) {
-                this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
+            const release = await this.mutex.acquire()
+            try {
+                if (!this.volumeByTradeTime.has(this.lastTradeTime)) {
+                    this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
+                }
+                // small race condition between sending our child order and receiving new messages but BEFORE lastTradeTime gets updated
+                const volume = this.volumeByTradeTime.get(this.lastTradeTime).add(PerpUtils.fromWei(positionNotional))
+                this.volumeByTradeTime.set(this.lastTradeTime, volume)
+                this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })
+            } finally {
+                release()
             }
-            // small race condition between sending our child order and receiving new messages but BEFORE lastTradeTime gets updated
-            const volume = this.volumeByTradeTime.get(this.lastTradeTime).add(PerpUtils.fromWei(positionNotional))
-            this.volumeByTradeTime.set(this.lastTradeTime, volume)
-            this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })
         }
     }
     // const sttingStr = `{total time:${this.time_in_mins}mins, interval:${this.interval_in_mins}mins}`

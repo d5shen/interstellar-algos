@@ -92,7 +92,7 @@ export abstract class Algo {
     // these can be dynamic depending on the type of Algo
     abstract tradeQuantity(): Big
 
-    positionChanged(
+    async positionChanged(
         trader: string,
         ammAddress: string,
         margin: BigNumber,
@@ -106,7 +106,7 @@ export abstract class Algo {
         liquidationPenalty: BigNumber,
         spotPrice: BigNumber,
         fundingPayment: BigNumber
-    ): void {
+    ): Promise<void> {
         // does nothing unless overridden
     }
 
