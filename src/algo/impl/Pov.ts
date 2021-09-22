@@ -108,7 +108,7 @@ export class Pov extends Algo {
     toString(): string {
         let settingStr = `pov:${this.percentOfVolume}, interval:${this.intervalInMins}mins`
         if (this.maximumNotional.gt(BIG_ZERO)) {
-            settingStr += `, max size:${this.maximumNotional}`
+            settingStr += `, max notional:${this.maximumNotional}`
         }
         return `${super.toString()}|` + settingStr.padEnd(45)
     }
