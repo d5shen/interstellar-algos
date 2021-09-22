@@ -101,7 +101,7 @@
         <mxCell id="pmTCPnABv33QQTrbROxs-14" value="constructor(...)" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="pmTCPnABv33QQTrbROxs-4">
           <mxGeometry y="138" width="360" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="pmTCPnABv33QQTrbROxs-17" value="sendChildOrder(amm, side, quantity, ...): Promise&lt;TradeRecord&gt;" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="pmTCPnABv33QQTrbROxs-4">
+        <mxCell id="pmTCPnABv33QQTrbROxs-17" value="sendChildOrder(amm, side, notional, ...): Promise&lt;TradeRecord&gt;" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rounded=0;shadow=0;html=0;" vertex="1" parent="pmTCPnABv33QQTrbROxs-4">
           <mxGeometry y="164" width="360" height="26" as="geometry" />
         </mxCell>
       </root>
