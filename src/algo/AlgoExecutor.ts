@@ -24,7 +24,7 @@ export class AlgoExecutor {
      *  baseAssetAmountLimit - slippage tolerance
      *  leverage - up to 10x
      *  childOrder - pre-instantiated TradeRecord
-     * 
+     *
      *  TO-DO: handle trade reversions due to block re-orgs (rare)
      */
     public async sendChildOrder(ammAddress: string, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
@@ -102,7 +102,10 @@ export class AlgoExecutor {
             childOrder.ppPositionChangedLog = positionChangedLog
             childOrder.ppExecSize = positionChangedLog.exchangedPositionSize
             childOrder.ppExecPrice = quoteAssetAmount.div(positionChangedLog.exchangedPositionSize).abs()
-            childOrder.slippage = childOrder.ppExecPrice.sub(childOrder.price).div(childOrder.price)
+
+            const rawSlippage = childOrder.ppExecPrice.sub(childOrder.price).div(childOrder.price)
+            childOrder.slippage = side == Side.BUY ? rawSlippage.mul(Big(-1)) : rawSlippage // +ve refers to fill at better price whle -ve refers to worse price
+
             childOrder.onSuccess()
 
             this.log.jinfo({
