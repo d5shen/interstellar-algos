@@ -88,7 +88,7 @@ export class AlgoExecutionService {
         this.gasService = new GasService(this.ethServiceReadOnly)
         this.nonceService = NonceService.getInstance(this.wallet)
 
-        this.positionService = new PerpPositionService(this.wallet.address, this.perpService)
+        this.positionService = new PerpPositionService(this.wallet.address, this.perpService, this.erc20Service)
         this.algoExecutor = new AlgoExecutor(this.wallet, this.perpService, this.gasService)
 
         this.eventEmitter = new EventEmitter()

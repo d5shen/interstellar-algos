@@ -73,57 +73,6 @@ export class BaseEthService {
         this.provider.removeAllListeners(transactionHash)
         return receipt
     }
-
-    static async supervise(
-        signer: Wallet,
-        tx: TransactionResponse,
-        timeout: number,
-        retry = 3,
-    ): Promise<TransactionReceipt> {
-        return new Promise((resolve, reject) => {
-            // Set timeout for sending cancellation tx at double the gas price
-            const timeoutId = setTimeout(async () => {
-                const cancelTx = await signer.sendTransaction({
-                    to: signer.address,
-                    value: 0,
-                    gasPrice: tx.gasPrice.mul(2), // TODO Make configurable?
-                    nonce: tx.nonce,
-                })
-
-                await BaseEthService.log.warn(
-                    JSON.stringify({
-                        event: "txCancelling",
-                        params: {
-                            tx: tx.hash,
-                            txGasPrice: tx.gasPrice.toString(),
-                            cancelTx: cancelTx.hash,
-                            cancelTxGasPrice: cancelTx.gasPrice.toString(),
-                            nonce: cancelTx.nonce,
-                        },
-                    }),
-                )
-
-                // Yo dawg I heard you like cancelling tx so
-                // we put a cancel in your cancel tx so you can supervise while you supervise
-                if (retry > 0) {
-                    await BaseEthService.supervise(signer, cancelTx, timeout, retry - 1)
-                } else {
-                    await cancelTx.wait()
-                }
-                reject({
-                    reason: "timeout",
-                    tx: tx.hash,
-                    cancelTx: cancelTx.hash,
-                })
-            }, timeout)
-
-            // Otherwise, resolve normally if the original tx is confirmed
-            tx.wait().then(result => {
-                clearTimeout(timeoutId)
-                resolve(result)
-            })
-        })
-    }
 }
 
 @Service()

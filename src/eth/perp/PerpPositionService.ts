@@ -1,3 +1,4 @@
+import { ERC20Service } from "../ERC20Service"
 import { PerpService, PnlCalcOption, Position } from "./PerpService"
 import { Service } from "typedi"
 import { Log } from "../../Log"
@@ -7,7 +8,7 @@ import Big from "big.js"
 export class PerpPositionService {
     private readonly log = Log.getLogger(PerpPositionService.name)
 
-    constructor(readonly wallet: string, readonly perpService: PerpService) {}
+    constructor(readonly wallet: string, readonly perpService: PerpService, readonly erc20Service: ERC20Service) {}
 
     async getPerpPosition(ammAddress: string): Promise<Position> {
         return await this.perpService.getPersonalPositionWithFundingPayment(ammAddress, this.wallet)
@@ -22,6 +23,14 @@ export class PerpPositionService {
             this.getPerpPosition(ammAddress),
             this.getPerpUnrealizedPnl(ammAddress),
         ])
+    }
+
+    async getBalances(addresses: string[]): Promise<Record<string, Big>> {
+        let balances: Record<string, Big> = {}
+        for (let address of addresses) {
+            balances[address] = await this.erc20Service.balanceOf(address, this.wallet)
+        }
+        return balances
     }
 
     async printPosition(ammAddress: string, ammPair: string): Promise<void> {

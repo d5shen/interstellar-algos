@@ -13,8 +13,7 @@ export class OrderManager {
     private readonly parentOrders = new Array<Order>()
 
     constructor(readonly algoExecutor: AlgoExecutor, readonly pair: string) {}
-
-    // TODO:do we need a mutex to lock the parentOrders or just a buffer and flush?
+    
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         this.log.jinfo({
             event: this.pair + ":ParentOrders",

@@ -71,7 +71,7 @@ export class Twap extends Algo {
         return BIG_ZERO.lt(tradeNotional)
     }
 
-    // TODO: ideally some randomness is added to the schedule to minimize footprint
+    // TO-DO: ideally some randomness is added to the schedule to minimize footprint
     private calcTradeSchedule(): Stack<Pair<number, Big>> {
         let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.notional.div(MIN_TRADE_NOTIONAL).toString())))
 

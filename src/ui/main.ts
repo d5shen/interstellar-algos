@@ -94,15 +94,15 @@ export class MainCLI {
         if (this.algoServerStatus) {
             this.pubSocket.send([userInputTopic, message])
         } else {
-            this.log.info("Algo Execution Service: NOT READY")
+            console.log("Algo Execution Service: NOT READY")
         }
     }
 
     receive(message: string, algoServerStatus: boolean): void {
         if (!this.algoServerStatus && algoServerStatus && message.length == 0) {
             // receivce heartbeat and the readInput has not been started
-            this.log.info("Algo Execution Service: ready for user input")
-            this.log.info("Type 'help' for help and 'exit' to exit")
+            console.log("Algo Execution Service: ready for user input")
+            console.log("Type 'help' for help and 'exit' to exit")
             this.readInput()
         }
         this.algoServerStatus = algoServerStatus
@@ -116,7 +116,8 @@ export class MainCLI {
     private logHelper(message: string): void {
         readline.clearLine(process.stdout, 0)
         readline.cursorTo(process.stdout, 0)
-        this.log.info(message)
+        console.log(message)
+        console.log(" ")
     }
 }
 
