@@ -104,8 +104,6 @@ export class Pov extends Algo {
             }
         }
     }
-    // const sttingStr = `{total time:${this.time_in_mins}mins, interval:${this.interval_in_mins}mins}`
-    // return `${super.toString()}|` + sttingStr.padEnd(60)
 
     toString(): string {
         let settingStr = `pov:${this.percentOfVolume}, interval:${this.interval_in_mins}mins`
