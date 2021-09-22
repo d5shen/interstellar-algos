@@ -45,7 +45,7 @@ export class Pov extends Algo {
             return false
         }
         // check volume done since last trade
-        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime)
+        const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime) ?? BIG_ZERO
         this.povLog.jinfo({ event: this.pair + ":VolumeSinceLastTrade", volume: volumeSinceLastTrade })
 
         let tradeNotional = BIG_ZERO
@@ -92,12 +92,9 @@ export class Pov extends Algo {
         if (this.ammAddress == ammAddress) {
             const release = await this.mutex.acquire()
             try {
-                if (!this.volumeByTradeTime.has(this.lastTradeTime)) {
-                    this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
-                }
                 // small race condition between sending our child order and receiving new messages but BEFORE lastTradeTime gets updated
-                const volume = this.volumeByTradeTime.get(this.lastTradeTime).add(PerpUtils.fromWei(positionNotional))
-                this.volumeByTradeTime.set(this.lastTradeTime, volume)
+                const volume = this.volumeByTradeTime.get(this.lastTradeTime) ?? BIG_ZERO
+                this.volumeByTradeTime.set(this.lastTradeTime, volume.add(PerpUtils.fromWei(positionNotional)))
                 this.povLog.jinfo({ event: this.pair + ":VolumeEvent", volume: volume })
             } finally {
                 release()
