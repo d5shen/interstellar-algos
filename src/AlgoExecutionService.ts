@@ -137,13 +137,13 @@ export class AlgoExecutionService {
         this.subSocket.connect(`tcp://${tcp}:${userInputPort}`)
         this.subSocket.subscribe(userInputTopic)
         this.log.jinfo({ event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}` })
-        this.subSocket.on("message", (topic, message) => {
-            this.interpret(message.toString().trim())
+        this.subSocket.on("message", async (topic, message) => {
+            await this.interpret(message.toString().trim())
         })
         this.statusPublisher.publish("Algo Execution Service: ready for user input", true)
     }
 
-    private interpret(msg: string) {
+    private async interpret(msg: string) {
         if (msg.toLowerCase() == "all orders") {
             this.retriveOrders()
         } else if (msg.toLowerCase() == "completed orders") {
@@ -161,7 +161,7 @@ export class AlgoExecutionService {
             const conditions = msg.split(" ").slice(1)
             this.findOrders(conditions)
         } else {
-            this.handleInput(msg)
+            await this.handleInput(msg)
         }
     }
 
@@ -328,7 +328,7 @@ export class AlgoExecutionService {
     }
 
     // TO-DO: better error handling, refined user entry
-    protected handleInput(input: string): void {
+    protected async handleInput(input: string): Promise<void> {
         this.log.jinfo({ input })
         try {
             const tokens = input.split(" ")
@@ -337,7 +337,7 @@ export class AlgoExecutionService {
             const side = Side[tokens[2]] // "BUY" or "SELL"
             const quantity = Big(tokens[3])
             if (quantity.lt(BIG_10)) {
-                throw Error("Notional cannot be less than 10 USDC")
+                this.statusPublisher.publish("Notional cannot be less than 10 USDC", true)
             }
 
             const settings = tokens.slice(4)
@@ -345,11 +345,18 @@ export class AlgoExecutionService {
 
             const ammAddress = this.pairs.get(pair)
             const ammConfig = this.configs.get(pair)
-            const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
 
-            const orderManager = this.orderManagers.get(ammAddress)
-            const order = orderManager.createOrder(side, quantity, algo)
-            this.statusPublisher.publish(`Created order for input: [${input}], id: ${order.id}`, true)
+            const quoteBalance = await this.erc20Service.balanceOf(this.amms.get(ammAddress)!.quoteAsset, this.wallet.address)
+
+            if (quantity.gt(ammConfig.PERPFI_LEVERAGE.mul(quoteBalance))) {
+                this.statusPublisher.publish(`Wallet ${pair.split("-")[1]} balance is ${quoteBalance} and is not enough for this order`, true)
+            } else {
+                const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
+
+                const orderManager = this.orderManagers.get(ammAddress)
+                const order = orderManager.createOrder(side, quantity, algo)
+                this.statusPublisher.publish(`Created order for input: [${input}], id: ${order.id}`, true)
+            }
         } catch (e) {
             this.log.jerror({
                 Reason: "Bad Input",
