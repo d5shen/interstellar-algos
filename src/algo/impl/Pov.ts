@@ -23,8 +23,8 @@ export class Pov extends Algo {
 
     private _tradeQuantity: Big
 
-    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void) {
-        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion)
+    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void, callbackOnCancel: () => void) {
+        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion, callbackOnCancel)
         this.percentOfVolume = Big(algoSettings.POV)
         this.interval_in_mins = algoSettings.INTERVAL
         this.interval = algoSettings.INTERVAL * 60 * 1000 // user inputs in minutes

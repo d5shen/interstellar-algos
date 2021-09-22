@@ -28,7 +28,7 @@ export abstract class Algo {
 
     readonly type: AlgoType
 
-    protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void) {
+    protected constructor(readonly algoExecutor: AlgoExecutor, readonly ammAddress: string, readonly pair: string, readonly direction: Side, readonly quantity: Big, readonly ammConfig: AmmConfig, readonly callbackOnCompletion: () => void, readonly callbackOnCancel: () => void) {
         this._remainingQuantity = quantity
         this._status = AlgoStatus.IN_PROGRESS
         this.positionChanged = this.positionChanged.bind(this)
@@ -60,12 +60,13 @@ export abstract class Algo {
         return this._status
     }
 
-    get status(): AlgoStatus {
-        return this._status
+    cancel(): void {
+        this._status = AlgoStatus.CANCELED
+        this.callbackOnCancel()
     }
 
-    set status(status: AlgoStatus) {
-        this._status = status
+    get status(): AlgoStatus {
+        return this._status
     }
 
     get filledQuantity(): Big {

@@ -35,9 +35,8 @@ export class OrderManager {
     public cancelOrder(orderId: string): boolean {
         const cancelOrderArray = this.parentOrders.filter((order) => order.id == orderId && order.status == OrderStatus.IN_PROGRESS)
         if (cancelOrderArray.length > 0) {
-            const cancelOrder = cancelOrderArray[0]
-            cancelOrder.status = OrderStatus.CANCELED
-            cancelOrder.algoStatus = AlgoStatus.CANCELED
+            const order = cancelOrderArray[0]
+            order.cancel()
             return true
         }
         return false

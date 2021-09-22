@@ -73,16 +73,13 @@ export class Order {
         return this._status
     }
 
+    cancel(): void {
+        this._status = OrderStatus.CANCELED
+        this.algo.cancel()
+    }
+
     get status(): OrderStatus {
         return this._status
-    }
-
-    set status(status: OrderStatus) {
-        this._status = status
-    }
-
-    set algoStatus(status: AlgoStatus) {
-        this.algo.status = status
     }
 
     get id(): string {

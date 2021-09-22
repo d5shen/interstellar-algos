@@ -23,7 +23,7 @@ export class Twap extends Algo {
     private intervalInMinutes: number
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
-        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {})
+        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {}, () => {})
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL

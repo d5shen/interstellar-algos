@@ -19,9 +19,11 @@ export class AlgoFactory {
         if (algoType == AlgoType.TWAP) {
             return new Twap(algoExecutor, ammAddress, pair, direction, quanity, ammConfig, algoSettings)
         } else if (algoType == AlgoType.POV) {
-            const pov = new Pov(algoExecutor, ammAddress, pair, direction, quanity, ammConfig, algoSettings, () => {
+            const removeListenerCallback = () => {
                 eventEmitter.removeListener("PositionChanged", pov.positionChanged)
-            })
+            }
+
+            const pov = new Pov(algoExecutor, ammAddress, pair, direction, quanity, ammConfig, algoSettings, removeListenerCallback, removeListenerCallback)
             eventEmitter.addListener("PositionChanged", pov.positionChanged)
             return pov
         }
