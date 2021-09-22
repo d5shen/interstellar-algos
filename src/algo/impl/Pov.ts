@@ -5,7 +5,7 @@ import { AlgoType } from "../AlgoFactory"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
 import { BigNumber } from "ethers"
-import { BIG_10, BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
+import { BIG_10, BIG_ZERO, MIN_TRADE_NOTIONAL, Side } from "../../Constants"
 import { Log } from "../../Log"
 import { Mutex } from "async-mutex"
 import Big from "big.js"
@@ -21,19 +21,19 @@ export class Pov extends Algo {
     private maximumNotional: Big = BIG_ZERO // optional
     private volumeByTradeTime = new Map<number, Big>()
 
-    private _tradeQuantity: Big
+    private _tradeNotional: Big
 
-    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void, callbackOnCancel: () => void) {
-        super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion, callbackOnCancel)
+    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, notional: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void, callbackOnCancel: () => void) {
+        super(algoExecutor, ammAddress, pair, direction, notional, ammConfig, callbackOnCompletion, callbackOnCancel)
         this.percentOfVolume = Big(algoSettings.POV)
         this.intervalInMins = algoSettings.INTERVAL
         this.interval = algoSettings.INTERVAL * 60 * 1000 // user input number is in minutes
 
-        // set min max size to MIN_TRADE_QUANTITY
+        // set min max size to MIN_TRADE_NOTIONAL
         if (algoSettings.MAXIMUM_NOTIONAL) {
             this.maximumNotional = Big(algoSettings.MAXIMUM_NOTIONAL)
-            if (this.maximumNotional.lt(MIN_TRADE_QUANTITY)) {
-                this.maximumNotional = MIN_TRADE_QUANTITY
+            if (this.maximumNotional.lt(MIN_TRADE_NOTIONAL)) {
+                this.maximumNotional = MIN_TRADE_NOTIONAL
             }
         }
         this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
@@ -48,30 +48,30 @@ export class Pov extends Algo {
         const volumeSinceLastTrade = this.volumeByTradeTime.get(this.lastTradeTime)
         this.povLog.jinfo({ event: this.pair + ":VolumeSinceLastTrade", volume: volumeSinceLastTrade })
 
-        let tradeQuantity = BIG_ZERO
-        const povQuantity = volumeSinceLastTrade.mul(this.percentOfVolume)
-        if (povQuantity.lt(BIG_10)) {
+        let tradeNotional = BIG_ZERO
+        const povNotional = volumeSinceLastTrade.mul(this.percentOfVolume)
+        if (povNotional.lt(BIG_10)) {
             return false
         }
 
-        tradeQuantity = povQuantity
+        tradeNotional = povNotional
 
-        // cap it at the maximum size
-        if (this.maximumNotional.gt(BIG_ZERO) && povQuantity.gt(this.maximumNotional)) {
-            tradeQuantity = this.maximumNotional
+        // cap it at the maximum notional
+        if (this.maximumNotional.gt(BIG_ZERO) && povNotional.gt(this.maximumNotional)) {
+            tradeNotional = this.maximumNotional
         }
 
-        // don't trade more than the remaining quantity!
-        if (tradeQuantity.gt(this.remainingQuantity)) {
-            tradeQuantity = this.remainingQuantity
+        // don't trade more than the remaining notional!
+        if (tradeNotional.gt(this.remainingNotional)) {
+            tradeNotional = this.remainingNotional
         }
 
-        this._tradeQuantity = tradeQuantity
-        return BIG_ZERO.lt(tradeQuantity)
+        this._tradeNotional = tradeNotional
+        return BIG_ZERO.lt(tradeNotional)
     }
 
-    tradeQuantity(): Big {
-        return this._tradeQuantity
+    tradeNotional(): Big {
+        return this._tradeNotional
     }
 
     async positionChanged(

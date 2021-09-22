@@ -21,7 +21,7 @@ export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
 
     protected lastTradeTime: number = 0
-    protected _remainingQuantity: Big = BIG_ZERO
+    protected _remainingNotional: Big = BIG_ZERO
     protected _status: AlgoStatus = AlgoStatus.INITIALIZED
     protected failedTrades = new Queue<TradeRecord>()
 
@@ -32,12 +32,12 @@ export abstract class Algo {
         readonly ammAddress: string,
         readonly pair: string,
         readonly direction: Side,
-        readonly quantity: Big,
+        readonly notional: Big,
         readonly ammConfig: AmmConfig,
         readonly callbackOnCompletion: () => void,
         readonly callbackOnCancel: () => void
     ) {
-        this._remainingQuantity = quantity
+        this._remainingNotional = notional
         this._status = AlgoStatus.IN_PROGRESS
         this.positionChanged = this.positionChanged.bind(this)
     }
@@ -45,19 +45,19 @@ export abstract class Algo {
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
     async execute(ammProps: AmmProperties, childOrder: TradeRecord): Promise<AlgoStatus> {
         const currentPrice = ammProps.price
-        const tradeQuantity = this.tradeQuantity()
-        const size = tradeQuantity.div(currentPrice)
+        const tradeNotional = this.tradeNotional()
+        const size = tradeNotional.div(currentPrice)
         const baseAssetAmountLimit = this.direction == Side.BUY ? size.mul(BIG_ONE.sub(this.maxSlippage())) : size.mul(BIG_ONE.add(this.maxSlippage()))
 
-        childOrder.notional = tradeQuantity
+        childOrder.notional = tradeNotional
         childOrder.size = size
         childOrder.price = currentPrice
         try {
-            const positionChangedLog = await this.algoExecutor.sendChildOrder(this.ammAddress, this.pair, this.direction, tradeQuantity, baseAssetAmountLimit, this.leverage(), childOrder)
+            const positionChangedLog = await this.algoExecutor.sendChildOrder(this.ammAddress, this.pair, this.direction, tradeNotional, baseAssetAmountLimit, this.leverage(), childOrder)
             // only update these on success (no exception thrown)
-            this._remainingQuantity = this._remainingQuantity.sub(tradeQuantity)
+            this._remainingNotional = this._remainingNotional.sub(tradeNotional)
             this.lastTradeTime = Date.now()
-            if (this._remainingQuantity.lte(BIG_ZERO)) {
+            if (this._remainingNotional.lte(BIG_ZERO)) {
                 this.complete()
             }
         } catch (e) {
@@ -82,11 +82,11 @@ export abstract class Algo {
     }
 
     get filledQuantity(): Big {
-        return this.quantity.sub(this.remainingQuantity)
+        return this.notional.sub(this.remainingQuantity)
     }
 
     get remainingQuantity(): Big {
-        return this._remainingQuantity
+        return this._remainingNotional
     }
 
     // can be overridden in specific Algo implementations
@@ -103,7 +103,7 @@ export abstract class Algo {
     abstract checkTradeCondition(ammProps: AmmProperties): boolean
 
     // these can be dynamic depending on the type of Algo
-    abstract tradeQuantity(): Big
+    abstract tradeNotional(): Big
 
     async positionChanged(
         trader: string,
@@ -124,6 +124,6 @@ export abstract class Algo {
     }
 
     toString(): string {
-        return `${AlgoType[this.type].padEnd(4)}|${this.quantity.toPrecision(3).padEnd(8)}|${this.remainingQuantity.toPrecision(3).padEnd(9)}`
+        return `${AlgoType[this.type].padEnd(4)}|${this.notional.toPrecision(3).padEnd(8)}|${this.remainingQuantity.toPrecision(3).padEnd(9)}`
     }
 }

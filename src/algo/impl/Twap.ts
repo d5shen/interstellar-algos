@@ -19,7 +19,7 @@ export class Twap extends Algo {
 
     private timeElapsed: number = 0
     private tradeSchedule: Stack<Pair<number, Big>>
-    private _tradeQuantity: Big
+    private _tradeNotional: Big
     private timeInMinutes: number
     private intervalInMinutes: number
 
@@ -65,7 +65,7 @@ export class Twap extends Algo {
             tradeQuantity = tradeQuantity.add(failedTrade.notional)
         }
 
-        this._tradeQuantity = tradeQuantity
+        this._tradeNotional = tradeQuantity
         this.timeElapsed++
 
         return BIG_ZERO.lt(tradeQuantity)
@@ -73,10 +73,10 @@ export class Twap extends Algo {
 
     // TODO: ideally some randomness is added to the schedule to minimize footprint
     private calcTradeSchedule(): Stack<Pair<number, Big>> {
-        let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.quantity.div(MIN_TRADE_QUANTITY).toString())))
+        let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.notional.div(MIN_TRADE_QUANTITY).toString())))
 
-        const tradeNotional = this.quantity.div(Big(tradeTimes))
-        const lastTradeNotional = this.quantity.minus(tradeNotional.mul(Big(tradeTimes - 1)))
+        const tradeNotional = this.notional.div(Big(tradeTimes))
+        const lastTradeNotional = this.notional.minus(tradeNotional.mul(Big(tradeTimes - 1)))
 
         const stack = new Stack<Pair<number, Big>>()
         stack.push(new Pair<number, Big>(this.interval * tradeTimes, lastTradeNotional))
@@ -89,8 +89,8 @@ export class Twap extends Algo {
         return stack
     }
 
-    tradeQuantity(): Big {
-        return this._tradeQuantity
+    tradeNotional(): Big {
+        return this._tradeNotional
     }
 
     toString(): string {

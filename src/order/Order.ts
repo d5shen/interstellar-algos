@@ -25,7 +25,7 @@ export class Order {
     private createTime: string
     private publisher = StatusPublisher.getInstance()
 
-    constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
+    constructor(readonly pair: string, readonly direction: Side, readonly notional: Big, algo: Algo) {
         this._id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
         this._status = OrderStatus.IN_PROGRESS
@@ -38,9 +38,9 @@ export class Order {
             event: "Order:Check",
             params: {
                 id: this._id,
-                quantity: this.quantity,
+                notional: this.notional,
                 filled: this.algo.filledQuantity,
-                remaining: this.algo.remainingQuantity,
+                remaining: this.algo.remainingNotional,
                 price: ammProps.price,
             },
         })
