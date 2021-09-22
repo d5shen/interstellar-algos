@@ -50,8 +50,7 @@ export class AlgoFactory {
 
             let settings = { POV: pov, INTERVAL: interval }
             if (input.length > 2) {
-                const maximumSize = parseFloat(input[2])
-                settings["MAXIMUM_SIZE"] = maximumSize
+                settings["MAXIMUM_NOTIONAL"] = parseFloat(input[2])
             }
 
             return settings

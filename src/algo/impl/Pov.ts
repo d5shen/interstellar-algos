@@ -16,9 +16,9 @@ export class Pov extends Algo {
     readonly mutex = new Mutex()
 
     private percentOfVolume: Big // percent tracking the PerpFi's total volume
-    private interval_in_mins: number // minimum waiting period (in mins) between child orders
+    private intervalInMins: number // minimum waiting period (in mins) between child orders
     private interval: number // minimum waiting period between child orders
-    private maximumSize: Big = BIG_ZERO // optional
+    private maximumNotional: Big = BIG_ZERO // optional
     private volumeByTradeTime = new Map<number, Big>()
 
     private _tradeQuantity: Big
@@ -26,14 +26,14 @@ export class Pov extends Algo {
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void, callbackOnCancel: () => void) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion, callbackOnCancel)
         this.percentOfVolume = Big(algoSettings.POV)
-        this.interval_in_mins = algoSettings.INTERVAL
+        this.intervalInMins = algoSettings.INTERVAL
         this.interval = algoSettings.INTERVAL * 60 * 1000 // user input number is in minutes
 
         // set min max size to MIN_TRADE_QUANTITY
-        if (algoSettings.MAXIMUM_SIZE) {
-            this.maximumSize = Big(algoSettings.MAXIMUM_SIZE)
-            if (this.maximumSize.lt(MIN_TRADE_QUANTITY)) {
-                this.maximumSize = MIN_TRADE_QUANTITY
+        if (algoSettings.MAXIMUM_NOTIONAL) {
+            this.maximumNotional = Big(algoSettings.MAXIMUM_NOTIONAL)
+            if (this.maximumNotional.lt(MIN_TRADE_QUANTITY)) {
+                this.maximumNotional = MIN_TRADE_QUANTITY
             }
         }
         this.volumeByTradeTime.set(this.lastTradeTime, BIG_ZERO)
@@ -57,8 +57,8 @@ export class Pov extends Algo {
         tradeQuantity = povQuantity
 
         // cap it at the maximum size
-        if (this.maximumSize.gt(BIG_ZERO) && povQuantity.gt(this.maximumSize)) {
-            tradeQuantity = this.maximumSize
+        if (this.maximumNotional.gt(BIG_ZERO) && povQuantity.gt(this.maximumNotional)) {
+            tradeQuantity = this.maximumNotional
         }
 
         // don't trade more than the remaining quantity!
@@ -106,9 +106,9 @@ export class Pov extends Algo {
     }
 
     toString(): string {
-        let settingStr = `pov:${this.percentOfVolume}, interval:${this.interval_in_mins}mins`
-        if (this.maximumSize.gt(BIG_ZERO)) {
-            settingStr += `, max size:${this.maximumSize}`
+        let settingStr = `pov:${this.percentOfVolume}, interval:${this.intervalInMins}mins`
+        if (this.maximumNotional.gt(BIG_ZERO)) {
+            settingStr += `, max size:${this.maximumNotional}`
         }
         return `${super.toString()}|` + settingStr.padEnd(45)
     }

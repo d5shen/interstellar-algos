@@ -18,7 +18,7 @@ export class Order {
     private readonly log = Log.getLogger(Order.name)
     private static counter = 0
     private _id: string
-    private _status: OrderStatus = OrderStatus.PENDING // should be an enum PENDING, IN_PROGRESS, CANCELED, COMPLETED?
+    private _status: OrderStatus = OrderStatus.PENDING
     private _childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private childOrderInFlight: boolean = false
     private algo: Algo
@@ -66,7 +66,7 @@ export class Order {
 
         if (this.algo.status == AlgoStatus.COMPLETED) {
             this._status = OrderStatus.COMPLETED
-        } else if (this.algo.status == AlgoStatus.FAILED) {
+        } else if (this.algo.status == AlgoStatus.FAILED || this.algo.status == AlgoStatus.CANCELED) {
             this._status = OrderStatus.CANCELED
         }
 
@@ -104,8 +104,8 @@ export class Order {
     }
 }
 
-const tradeLogger = Log.getLogger("Trade")
 export class TradeRecord {
+    private readonly tradeLogger = Log.getLogger(TradeRecord.name)
     tradeId: string | null = null
     state: string = "PENDING"
     pair: string | null = null
@@ -140,12 +140,12 @@ export class TradeRecord {
 
     onSuccess(): void {
         this.state = "PASSED"
-        tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Passed] ` + JSON.stringify(this))
+        this.tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Passed] ` + JSON.stringify(this))
     }
 
     onFail(): void {
         this.state = "FAILED"
-        tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Failed] ` + JSON.stringify(this))
+        this.tradeLogger.info(`[${Side[this.side]}:TRADE:Final:Failed] ` + JSON.stringify(this))
     }
 
     toString(): string {

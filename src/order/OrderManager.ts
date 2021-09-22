@@ -14,7 +14,7 @@ export class OrderManager {
 
     constructor(readonly algoExecutor: AlgoExecutor, readonly pair: string) {}
 
-    // do we need a mutex to lock the parentOrders or just a buffer and flush?
+    // TODO:do we need a mutex to lock the parentOrders or just a buffer and flush?
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         this.log.jinfo({
             event: this.pair + ":ParentOrders",

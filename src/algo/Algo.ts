@@ -58,7 +58,6 @@ export abstract class Algo {
             this._remainingQuantity = this._remainingQuantity.sub(tradeQuantity)
             this.lastTradeTime = Date.now()
             if (this._remainingQuantity.lte(BIG_ZERO)) {
-                this._status = AlgoStatus.COMPLETED
                 this.complete()
             }
         } catch (e) {
