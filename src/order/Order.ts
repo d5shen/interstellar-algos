@@ -39,7 +39,7 @@ export class Order {
             params: {
                 id: this._id,
                 notional: this.notional,
-                filled: this.algo.filledQuantity,
+                filled: this.algo.filledNotional,
                 remaining: this.algo.remainingNotional,
                 price: ammProps.price,
             },

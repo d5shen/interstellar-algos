@@ -81,11 +81,11 @@ export abstract class Algo {
         return this._status
     }
 
-    get filledQuantity(): Big {
-        return this.notional.sub(this.remainingQuantity)
+    get filledNotional(): Big {
+        return this.notional.sub(this.remainingNotional)
     }
 
-    get remainingQuantity(): Big {
+    get remainingNotional(): Big {
         return this._remainingNotional
     }
 
@@ -124,6 +124,6 @@ export abstract class Algo {
     }
 
     toString(): string {
-        return `${AlgoType[this.type].padEnd(4)}|${this.notional.toPrecision(3).padEnd(8)}|${this.remainingQuantity.toPrecision(3).padEnd(9)}`
+        return `${AlgoType[this.type].padEnd(4)}|${this.notional.toPrecision(3).padEnd(8)}|${this.remainingNotional.toPrecision(3).padEnd(9)}`
     }
 }

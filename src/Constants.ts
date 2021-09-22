@@ -18,7 +18,7 @@ export const BIG_1K = Big(1000)
 export const BIG_10K = Big(10000)
 export const BIG_1BIO = Big(1000000000)
 
-export const MIN_TRADE_QUANTITY = Big(10)
+export const MIN_TRADE_NOTIONAL = Big(10)
 
 export enum Side {
     BUY,

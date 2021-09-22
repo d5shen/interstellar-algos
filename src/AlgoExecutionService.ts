@@ -335,8 +335,8 @@ export class AlgoExecutionService {
             const algoType = AlgoType[tokens[0]]
             const pair = tokens[1]
             const side = Side[tokens[2]] // "BUY" or "SELL"
-            const quantity = Big(tokens[3])
-            if (quantity.lt(BIG_10)) {
+            const notional = Big(tokens[3])
+            if (notional.lt(BIG_10)) {
                 this.statusPublisher.publish("Notional cannot be less than 10 USDC", true)
             }
 
@@ -348,13 +348,13 @@ export class AlgoExecutionService {
 
             const quoteBalance = await this.erc20Service.balanceOf(this.amms.get(ammAddress)!.quoteAsset, this.wallet.address)
 
-            if (quantity.gt(ammConfig.PERPFI_LEVERAGE.mul(quoteBalance))) {
+            if (notional.gt(ammConfig.PERPFI_LEVERAGE.mul(quoteBalance))) {
                 this.statusPublisher.publish(`Wallet ${pair.split("-")[1]} balance is ${quoteBalance} and is not enough for this order`, true)
             } else {
-                const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, quantity, ammConfig, algoSettings, algoType)
+                const algo = AlgoFactory.createAlgo(this.algoExecutor, this.eventEmitter, ammAddress, pair, side, notional, ammConfig, algoSettings, algoType)
 
                 const orderManager = this.orderManagers.get(ammAddress)
-                const order = orderManager.createOrder(side, quantity, algo)
+                const order = orderManager.createOrder(side, notional, algo)
                 this.statusPublisher.publish(`Created order for input: [${input}], id: ${order.id}`, true)
             }
         } catch (e) {

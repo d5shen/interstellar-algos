@@ -3,7 +3,7 @@ import { AlgoExecutor } from "../AlgoExecutor"
 import { AlgoType } from "../AlgoFactory"
 import { AmmConfig } from "../../amm/AmmConfigs"
 import { AmmProperties } from "../../AlgoExecutionService"
-import { BIG_ZERO, MIN_TRADE_QUANTITY, Side } from "../../Constants"
+import { BIG_ZERO, MIN_TRADE_NOTIONAL, Side } from "../../Constants"
 import { Log } from "../../Log"
 import { Pair, Stack } from "../../DataStructure"
 import Big from "big.js"
@@ -23,13 +23,13 @@ export class Twap extends Algo {
     private timeInMinutes: number
     private intervalInMinutes: number
 
-    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
+    constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, notional: Big, ammConfig: AmmConfig, algoSettings: any) {
         super(
             algoExecutor,
             ammAddress,
             pair,
             direction,
-            quantity,
+            notional,
             ammConfig,
             () => {},
             () => {}
@@ -53,27 +53,27 @@ export class Twap extends Algo {
             StatusPublisher.getInstance().publish(`total time cycle elpsae ${(this.timeElapsed * pollFrequency) / 60}mins since start of algo, but the algo is not yet completed. The config time is ${this.timeInMinutes}mins`, true)
         }
 
-        let tradeQuantity = BIG_ZERO
+        let tradeNotional = BIG_ZERO
         while (this.tradeSchedule.size() > 0 && this.tradeSchedule.peek().getFirst() <= this.timeElapsed) {
             const nextTrade = this.tradeSchedule.pop()
-            tradeQuantity = tradeQuantity.add(nextTrade.getSecond())
+            tradeNotional = tradeNotional.add(nextTrade.getSecond())
         }
 
         // previously failed trades must be sent this iteration
         while (this.failedTrades.size() > 0) {
             const failedTrade = this.failedTrades.pop()
-            tradeQuantity = tradeQuantity.add(failedTrade.notional)
+            tradeNotional = tradeNotional.add(failedTrade.notional)
         }
 
-        this._tradeNotional = tradeQuantity
+        this._tradeNotional = tradeNotional
         this.timeElapsed++
 
-        return BIG_ZERO.lt(tradeQuantity)
+        return BIG_ZERO.lt(tradeNotional)
     }
 
     // TODO: ideally some randomness is added to the schedule to minimize footprint
     private calcTradeSchedule(): Stack<Pair<number, Big>> {
-        let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.notional.div(MIN_TRADE_QUANTITY).toString())))
+        let tradeTimes = Math.min(Math.floor(this.time / this.interval), Math.floor(Number(this.notional.div(MIN_TRADE_NOTIONAL).toString())))
 
         const tradeNotional = this.notional.div(Big(tradeTimes))
         const lastTradeNotional = this.notional.minus(tradeNotional.mul(Big(tradeTimes - 1)))
