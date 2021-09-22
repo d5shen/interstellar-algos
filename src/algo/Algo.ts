@@ -21,10 +21,10 @@ export enum AlgoStatus {
 export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
 
-    protected lastTradeTime: number = 0 // initialize the lastTradeTime
+    protected lastTradeTime: number = 0
     protected _remainingQuantity: Big = BIG_ZERO
     protected _status: AlgoStatus = AlgoStatus.INITIALIZED
-    protected failTrades = new Queue<Big>()
+    protected failedTrades = new Queue<TradeRecord>()
 
     readonly type: AlgoType
 
@@ -36,8 +36,6 @@ export abstract class Algo {
 
     // execute() accepts a pre-created childOrder TradeRecord, which will populate the rest of the fields in sendChildOrder()
     async execute(ammProps: AmmProperties, childOrder: TradeRecord): Promise<AlgoStatus> {
-        // if buying FTT, I want to receive AT LEAST size*(1-slip) contracts
-        // if selling FTT, I want to give up AT MOST size*(1+slip) contracts
         const currentPrice = ammProps.price
         const tradeQuantity = this.tradeQuantity()
         const size = tradeQuantity.div(currentPrice)
@@ -56,7 +54,7 @@ export abstract class Algo {
                 this.callbackOnCompletion()
             }
         } catch (e) {
-            this.failTrades.push(tradeQuantity)
+            this.failedTrades.push(childOrder)
         }
 
         return this._status

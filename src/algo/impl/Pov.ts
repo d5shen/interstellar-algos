@@ -12,6 +12,7 @@ import { Socket } from "zeromq"
 
 export class Pov extends Algo {
     private readonly povLog = Log.getLogger(Pov.name)
+    readonly type: AlgoType = AlgoType.POV
 
     private percentOfVolume: Big // percent tracking the PerpFi's total volume
     private interval_in_mins: number
@@ -20,8 +21,6 @@ export class Pov extends Algo {
     private volumeByTradeTime = new Map<number, Big>()
 
     private _tradeQuantity: Big
-
-    readonly type: AlgoType = AlgoType.POV
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any, callbackOnCompletion: () => void) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, callbackOnCompletion)

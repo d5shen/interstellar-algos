@@ -8,10 +8,6 @@ import { Side } from "../Constants"
 import Big from "big.js"
 
 export class OrderManager {
-    // TODO:
-    //   make this a singleton or a static class
-    //   watch out for block reorgs...
-
     private readonly log = Log.getLogger(OrderManager.name)
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))
     private readonly parentOrders = new Array<Order>()

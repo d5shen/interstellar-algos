@@ -5,7 +5,7 @@ import { AmmProperties } from "../AlgoExecutionService"
 import { BIG_ZERO, CHILD_ORDER_TABLE_HEADER, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
-import { StatusPublisher } from "../ui/StatusUtil"
+import { StatusPublisher } from "../ui/StatusPublisher"
 
 export enum OrderStatus {
     PENDING,
@@ -23,7 +23,7 @@ export class Order {
     private childOrderInFlight: boolean = false
     private algo: Algo
     private createTime: string
-    private pubSocket = StatusPublisher.getInstance()
+    private publisher = StatusPublisher.getInstance()
 
     constructor(readonly pair: string, readonly direction: Side, readonly quantity: Big, algo: Algo) {
         this._id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
@@ -60,7 +60,7 @@ export class Order {
             })
 
             await this.algo.execute(ammProps, childOrder)
-            this.pubSocket.publish("Traded " + CHILD_ORDER_TABLE_HEADER + "\n" + childOrder.toString(), true)
+            this.publisher.publish("Traded " + CHILD_ORDER_TABLE_HEADER + "\n" + childOrder.toString(), true)
             this.childOrderInFlight = false
         }
 

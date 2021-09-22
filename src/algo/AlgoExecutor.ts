@@ -24,6 +24,8 @@ export class AlgoExecutor {
      *  baseAssetAmountLimit - slippage tolerance
      *  leverage - up to 10x
      *  childOrder - pre-instantiated TradeRecord
+     * 
+     *  TO-DO: handle trade reversions due to block re-orgs (rare)
      */
     public async sendChildOrder(ammAddress: string, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
         if (BIG_10.lt(leverage)) {

@@ -11,58 +11,57 @@ import { Socket } from "zeromq"
 
 export class Twap extends Algo {
     private readonly twapLog = Log.getLogger(Twap.name)
+    readonly type: AlgoType = AlgoType.TWAP
 
     private time: number // total time to execute the algo (in number of main loop cycle)
     private interval: number // time interval between each trade (in number of main loop cycle)
 
-    private timeElapse: number = 0
+    private timeElapsed: number = 0
     private tradeSchedule: Stack<Pair<number, Big>>
     private _tradeQuantity: Big
-    private algoSettings: any
-    readonly type: AlgoType = AlgoType.TWAP
-    private time_in_mins: number
-    private interval_in_mins: number
+    private timeInMinutes: number
+    private intervalInMinutes: number
 
     constructor(algoExecutor: AlgoExecutor, ammAddress: string, pair: string, direction: Side, quantity: Big, ammConfig: AmmConfig, algoSettings: any) {
         super(algoExecutor, ammAddress, pair, direction, quantity, ammConfig, () => {})
 
         this.time = algoSettings.TIME
         this.interval = algoSettings.INTERVAL
-        this.time_in_mins = algoSettings.TOTAL_MINS
-        this.interval_in_mins = algoSettings.INTERVAL_IN_MINS
+        this.timeInMinutes = algoSettings.TOTAL_MINS
+        this.intervalInMinutes = algoSettings.INTERVAL_IN_MINS
         this.tradeSchedule = this.calcTradeSchedule()
     }
 
     checkTradeCondition(ammProps: AmmProperties): boolean {
-        if (this.tradeSchedule.size() == 0 && this.failTrades.size() == 0) {
+        if (this.tradeSchedule.size() == 0 && this.failedTrades.size() == 0) {
             // NO MORE SCHEULED TRADED OR FAIL TRADES
             this._status = AlgoStatus.COMPLETED
             return false
         }
 
-        if (this.timeElapse > 3 * this.time) {
+        if (this.timeElapsed > 3 * this.time) {
             this._status = AlgoStatus.FAILED
             throw new Error(`executing Twap Algo time is way pass the schedule time. The algo is forced to completed. The remaining quantity is ${this.remainingQuantity}.`)
         }
 
-        if (this.timeElapse > this.time && this._status != AlgoStatus.COMPLETED) {
-            this.twapLog.warn(`total time cycle elpsae ${this.timeElapse} since start of algo, but the algo is not yet completed. The config time cycle is ${this.time}`)
+        if (this.timeElapsed > this.time && this._status != AlgoStatus.COMPLETED) {
+            this.twapLog.warn(`total time cycle elpsae ${this.timeElapsed} since start of algo, but the algo is not yet completed. The config time cycle is ${this.time}`)
         }
 
         let tradeQuantity = BIG_ZERO
-        while (this.tradeSchedule.size() > 0 && this.tradeSchedule.peek().getFirst() <= this.timeElapse) {
+        while (this.tradeSchedule.size() > 0 && this.tradeSchedule.peek().getFirst() <= this.timeElapsed) {
             const nextTrade = this.tradeSchedule.pop()
             tradeQuantity = tradeQuantity.add(nextTrade.getSecond())
         }
 
         // previously failed trades must be sent this iteration
-        while (this.failTrades.size() > 0) {
-            const failedTrade = this.failTrades.pop()
-            tradeQuantity = tradeQuantity.add(failedTrade)
+        while (this.failedTrades.size() > 0) {
+            const failedTrade = this.failedTrades.pop()
+            tradeQuantity = tradeQuantity.add(failedTrade.notional)
         }
 
         this._tradeQuantity = tradeQuantity
-        this.timeElapse++
+        this.timeElapsed++
 
         return BIG_ZERO.lt(tradeQuantity)
     }
@@ -90,7 +89,7 @@ export class Twap extends Algo {
     }
 
     toString(): string {
-        const settingStr = `total time:${this.time_in_mins}mins, interval:${this.interval_in_mins}mins`
+        const settingStr = `total time:${this.timeInMinutes}mins, interval:${this.intervalInMinutes}mins`
         return `${super.toString()}|` + settingStr.padEnd(45)
     }
 }
