@@ -89,3 +89,39 @@ $ ./run.ps1
 ```bash
 $ env $(cat .env.production | grep -v '#') npx ts-node --files src/ui/main.ts
 ```
+
+## Supported Algos
+
+### TWAP
+
+The TWAP Algo executes user's order based on a fixed time period sliced into multiple intervals.
+
+To input a TWAP order in the CLI, the command pattern is:
+
+```bash
+INPUT> TWAP [Pair Name] [BUY|SELL] [USDC Amount] [Total Time (mins)] [Interval (mins)]
+```
+
+For example:
+```bash
+INPUT> TWAP SUSHI-USDC BUY 5000 120 10
+```
+
+This will buy 5000 USDC worth of SUSHI-USDC perp over 120 minutes, executing a small trade every 10 minutes
+
+### POV
+
+The POV Algo executes user's order based on a percentage of the pair's total volume traded a fixed time period on Perpetual Protocol
+
+To input a POV order in the CLI, the command pattern is:
+
+```bash
+INPUT> POV [Pair Name] [BUY|SELL] [USDC Amount] [Percent of Volume (in decimals)] [Interval (mins)] [Max Clip Size (optional)]
+```
+
+For example:
+```bash
+INPUT> POV SUSHI-USDC BUY 10000 0.05 10 2000
+```
+
+This will buy 10000 USDC worth of SUSHI-USDC perp at 5% of the total SUSHI-USDC traded volume on Perpetual Protocol, with at least 10 minutes between each trade, and no more than a clip size of 2000 USDC. This means that if, within a 10 minute interval, 90,000 USDC volume was traded, the user should target 5% of that (4500 USDC) in the next clip but because a max clip size of 2000 USDC was specified, it will only trade 2000 USDC worth of SUSHI-USDC perp.
