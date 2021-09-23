@@ -116,7 +116,7 @@ The POV Algo executes user's order based on a percentage of the pair's total vol
 To input a POV order in the CLI, the command pattern is:
 
 ```bash
-INPUT> POV [Pair Name] [BUY|SELL] [USDC Amount] [Percent of Volume (in decimals)] [Interval (mins)] [Max Clip Size (optional)]
+INPUT> POV [Pair Name] [BUY|SELL] [USDC Amount] [POV (in decimal)] [Interval (mins)] [Max Clip Size (optional)]
 ```
 
 For example:
