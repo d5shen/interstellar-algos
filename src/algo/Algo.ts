@@ -17,6 +17,10 @@ export enum AlgoStatus {
     CANCELED,
 }
 
+/**  
+ **  All algo implementations must inherit from the Algo class which handles
+ **   generic execution style, and housekeeping like completion and cancellation
+ **/
 export abstract class Algo {
     private readonly log = Log.getLogger(Algo.name)
 

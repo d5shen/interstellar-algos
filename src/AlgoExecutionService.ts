@@ -17,16 +17,20 @@ import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { MaxUint256 } from "@ethersproject/constants"
 import { OrderManager } from "./order/OrderManager"
+import { OrderStatus } from "./order/Order"
 import { PerpService } from "./eth/perp/PerpService"
 import { PerpPositionService } from "./eth/perp/PerpPositionService"
 import { ServerProfile } from "./eth/ServerProfile"
 import { Service } from "typedi"
 import { Socket, socket } from "zeromq"
+import { StatusPublisher } from "./ui/StatusPublisher"
 import { Wallet } from "ethers"
 import Big from "big.js"
-import { StatusPublisher } from "./ui/StatusPublisher"
-import { OrderStatus } from "./order/Order"
 
+
+/**  
+ **  Container to hold real-time data about the AMM pair
+ **/
 export class AmmProperties {
     readonly pair: string
     readonly quoteAsset: string
@@ -42,6 +46,11 @@ export class AmmProperties {
         this.quoteAssetReserve = quoteAssetReserve
     }
 }
+
+/**  
+ **  Main server (perptually running) class that processes user inputs and algo orders
+ **  User needs to configure their own xDai node for trading and getting blockchain data
+ **/
 
 @Service()
 export class AlgoExecutionService {
@@ -132,38 +141,10 @@ export class AlgoExecutionService {
         return
     }
 
-    async subscribeInput(): Promise<void> {
-        this.subSocket = socket("sub")
-        this.subSocket.connect(`tcp://${tcp}:${userInputPort}`)
-        this.subSocket.subscribe(userInputTopic)
-        this.log.jinfo({ event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}` })
-        this.subSocket.on("message", async (topic, message) => {
-            await this.interpret(message.toString().trim())
-        })
-        this.statusPublisher.publish("Algo Execution Service: ready for user input", true)
-    }
-
-    private async interpret(msg: string) {
-        if (msg.toLowerCase() == "all orders") {
-            this.retriveOrders()
-        } else if (msg.toLowerCase() == "completed orders") {
-            this.retriveOrders(OrderStatus.COMPLETED)
-        } else if (msg.toLowerCase() == "in progress orders") {
-            this.retriveOrders(OrderStatus.IN_PROGRESS)
-        } else if (msg.toLowerCase() == "cancelled orders") {
-            this.retriveOrders(OrderStatus.CANCELED)
-        } else if (msg.startsWith("cancel ")) {
-            const cancelId = msg.split(" ")
-            for (let i = 1; i < cancelId.length; i++) {
-                this.cancelOrder(cancelId[i].trim())
-            }
-        } else if (msg.startsWith("find ")) {
-            const conditions = msg.split(" ").slice(1)
-            this.findOrders(conditions)
-        } else {
-            await this.handleInput(msg)
-        }
-    }
+    /******************************************
+     **  Initialization methods for user input,
+     **   configs, other setup
+     ******************************************/
 
     private cancelOrder(cancelId: string) {
         try {
@@ -239,7 +220,25 @@ export class AlgoExecutionService {
         }
     }
 
-    async approveAllowances(pair: string, quoteAssetAddress: string): Promise<void> {
+    protected async prechecks(): Promise<Boolean> {
+        let ok = true
+        // Check xDai balance - needed for gas payments
+        const xDaiBalance = await this.ethServiceReadOnly.getBalance(this.wallet.address)
+        this.log.jinfo({
+            event: "xDaiBalance",
+            params: { balance: xDaiBalance.toFixed(4) },
+        })
+        if (xDaiBalance.lt(preflightCheck.XDAI_BALANCE_THRESHOLD)) {
+            this.log.jwarn({
+                event: "xDaiNotEnough",
+                params: { balance: xDaiBalance.toFixed(4) },
+            })
+            ok = false
+        }
+        return ok
+    }
+
+    private async approveAllowances(pair: string, quoteAssetAddress: string): Promise<void> {
         // Make sure the quote asset are approved, but only once!
         const clearingHouseAddr = this.systemMetadata.clearingHouseAddr
         const allowance = await this.erc20Service.allowance(quoteAssetAddress, this.wallet.address, clearingHouseAddr)
@@ -263,10 +262,8 @@ export class AlgoExecutionService {
     }
 
     /******************************************
-     **
      **  Public top-level script functions,
      **  All require initialize() call
-     **
      ******************************************/
 
     async startInterval(): Promise<void> {
@@ -306,10 +303,41 @@ export class AlgoExecutionService {
     }
 
     /******************************************
-     **
-     **  End public top-level script functions
-     **
+     **  Event handlers
      ******************************************/
+
+    private async subscribeInput(): Promise<void> {
+        this.subSocket = socket("sub")
+        this.subSocket.connect(`tcp://${tcp}:${userInputPort}`)
+        this.subSocket.subscribe(userInputTopic)
+        this.log.jinfo({ event: `service subscriber connect to port ${userInputPort} on topic:${userInputTopic}` })
+        this.subSocket.on("message", async (topic, message) => {
+            await this.interpret(message.toString().trim())
+        })
+        this.statusPublisher.publish("Algo Execution Service: ready for user input", true)
+    }
+
+    private async interpret(msg: string) {
+        if (msg.toLowerCase() == "all orders") {
+            this.retriveOrders()
+        } else if (msg.toLowerCase() == "completed orders") {
+            this.retriveOrders(OrderStatus.COMPLETED)
+        } else if (msg.toLowerCase() == "in progress orders") {
+            this.retriveOrders(OrderStatus.IN_PROGRESS)
+        } else if (msg.toLowerCase() == "cancelled orders") {
+            this.retriveOrders(OrderStatus.CANCELED)
+        } else if (msg.startsWith("cancel ")) {
+            const cancelId = msg.split(" ")
+            for (let i = 1; i < cancelId.length; i++) {
+                this.cancelOrder(cancelId[i].trim())
+            }
+        } else if (msg.startsWith("find ")) {
+            const conditions = msg.split(" ").slice(1)
+            this.findOrders(conditions)
+        } else {
+            await this.handleInput(msg)
+        }
+    }
 
     protected configChanged(curr: fs.Stats, prev: fs.Stats): void {
         try {
@@ -467,25 +495,12 @@ export class AlgoExecutionService {
         }
     }
 
-    protected async prechecks(): Promise<Boolean> {
-        let ok = true
-        // Check xDai balance - needed for gas payments
-        const xDaiBalance = await this.ethServiceReadOnly.getBalance(this.wallet.address)
-        this.log.jinfo({
-            event: "xDaiBalance",
-            params: { balance: xDaiBalance.toFixed(4) },
-        })
-        if (xDaiBalance.lt(preflightCheck.XDAI_BALANCE_THRESHOLD)) {
-            this.log.jwarn({
-                event: "xDaiNotEnough",
-                params: { balance: xDaiBalance.toFixed(4) },
-            })
-            ok = false
-        }
-        return ok
-    }
+    /******************************************
+     **  Main logic to process orders and do
+     **   housekeeping with nonces, print pos
+     ******************************************/
 
-    async processAmmCall(eventName: string, callback: (a: Amm) => Promise<any>): Promise<void> {
+    protected async processAmmCall(eventName: string, callback: (a: Amm) => Promise<any>): Promise<void> {
         await Promise.all(
             this.openAmms.map(async (amm: Amm) => {
                 try {
@@ -505,7 +520,6 @@ export class AlgoExecutionService {
     }
 
     private async checkOrders(): Promise<void> {
-        // ask the order manager to check orders?
         await this.processAmmCall("OrderManager:CheckOrders", async (a: Amm) => {
             if (this.amms.has(a.address) && this.orderManagers.has(a.address)) {
                 const o = this.orderManagers.get(a.address)

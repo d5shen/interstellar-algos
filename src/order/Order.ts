@@ -14,6 +14,10 @@ export enum OrderStatus {
     COMPLETED,
 }
 
+/**  
+ **  Class to represent a new parent order for algo execution
+ **   manages its child orders and associated with a single algo type
+ **/
 export class Order {
     private readonly log = Log.getLogger(Order.name)
     private static counter = 0
@@ -104,6 +108,9 @@ export class Order {
     }
 }
 
+/**  
+ **  Basic trade record to represent submitted child orders transactions
+ **/
 export class TradeRecord {
     private readonly tradeLogger = Log.getLogger(TradeRecord.name)
     tradeId: string | null = null
@@ -129,7 +136,7 @@ export class TradeRecord {
     ppTxBlockNumber: number | null = null
     ppTxGasLimit: Big | null = null
     ppTxGasUsed: Big = BIG_ZERO
-    ppTxStatus: number | undefined = undefined // false if txn reverted, true if successful
+    ppTxStatus: number | undefined = undefined // 0 if txn reverted, 1 if successful
     ppPositionChangedLog: PerpUtils.PositionChangedLog | null = null
 
     slippage: Big = BIG_ZERO // slippage in bps between price and ppExecPrice

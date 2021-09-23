@@ -9,6 +9,12 @@ import { TradeRecord } from "../order/Order"
 import { Wallet } from "ethers"
 import Big from "big.js"
 
+/**  
+ **  AlgoExecutor class responsible for sending the child orders to the blockchain
+ **   through the PerpService / Clearinghouse interface
+ **
+ **  TO-DO: handle trade reversions due to block re-orgs (rare)
+ **/
 export class AlgoExecutor {
     private readonly log = Log.getLogger(AlgoExecutor.name)
     private _awaitingTrade: boolean = false
@@ -24,8 +30,6 @@ export class AlgoExecutor {
      *  baseAssetAmountLimit - slippage tolerance
      *  leverage - up to 10x
      *  childOrder - pre-instantiated TradeRecord
-     *
-     *  TO-DO: handle trade reversions due to block re-orgs (rare)
      */
     public async sendChildOrder(ammAddress: string, pair: string, side: Side, quoteAssetAmount: Big, baseAssetAmountLimit: Big, leverage: Big, childOrder: TradeRecord): Promise<PerpUtils.PositionChangedLog> {
         if (BIG_10.lt(leverage)) {

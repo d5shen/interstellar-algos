@@ -13,6 +13,9 @@ export enum AlgoType {
     TWAP,
 }
 
+/**  
+ **  Static helper class to construct an algo for a new order
+ **/
 export class AlgoFactory {
     private constructor() {}
     public static createAlgo(algoExecutor: AlgoExecutor, eventEmitter: EventEmitter, ammAddress: string, pair: string, direction: Side, quanity: Big, ammConfig: AmmConfig, algoSettings: any, algoType: AlgoType): Algo {

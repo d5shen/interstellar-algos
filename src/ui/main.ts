@@ -4,6 +4,10 @@ import { Socket, socket } from "zeromq"
 import { statusPort, statusTopic, tcp, userInputPort, userInputTopic, initialTimeOut } from "../configs"
 import { Log } from "../Log"
 
+/**  
+ **  Main Command Line Interface class - user will need to run this script to 
+ **   interact with the algo execution server
+ **/
 export class MainCLI {
     private log = Log.getLogger(MainCLI.name)
     private pubSocket: Socket

@@ -6,10 +6,15 @@ import { AmmProperties } from "../../AlgoExecutionService"
 import { BIG_ZERO, MIN_TRADE_NOTIONAL, Side } from "../../Constants"
 import { Log } from "../../Log"
 import { Pair, Stack } from "../../DataStructure"
-import Big from "big.js"
-import { StatusPublisher } from "../../ui/StatusPublisher"
 import { pollFrequency } from "../../configs"
+import { StatusPublisher } from "../../ui/StatusPublisher"
+import Big from "big.js"
 
+/**  
+ **  TWAP Algo
+ **    Executes user's order based on a fixed time period 
+ **    sliced into multiple intervals
+ **/
 export class Twap extends Algo {
     private readonly twapLog = Log.getLogger(Twap.name)
     readonly type: AlgoType = AlgoType.TWAP

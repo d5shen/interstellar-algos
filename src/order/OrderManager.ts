@@ -1,5 +1,5 @@
 import { AlgoExecutor } from "../algo/AlgoExecutor"
-import { Algo, AlgoStatus } from "../algo/Algo"
+import { Algo } from "../algo/Algo"
 import { AmmProperties } from "../AlgoExecutionService"
 import { Log } from "../Log"
 import { Mutex, withTimeout } from "async-mutex"
@@ -7,6 +7,10 @@ import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
 
+
+/**  
+ **  OrderManager responsible for managing each pair's parent orders algo executions
+ **/
 export class OrderManager {
     private readonly log = Log.getLogger(OrderManager.name)
     readonly mutex = withTimeout(new Mutex(), 30000, new Error("Could not acquire mutex within 30s"))

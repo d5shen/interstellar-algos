@@ -10,6 +10,11 @@ import { Log } from "../../Log"
 import { Mutex } from "async-mutex"
 import Big from "big.js"
 
+/**  
+ **  Percentage-of-Volume Algo
+ **    Executes user's order based on a percentage of the pair's 
+ **    total volume traded over a certain interval
+ **/
 export class Pov extends Algo {
     private readonly povLog = Log.getLogger(Pov.name)
     readonly type: AlgoType = AlgoType.POV
