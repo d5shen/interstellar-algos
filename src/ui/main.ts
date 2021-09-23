@@ -26,6 +26,9 @@ export class MainCLI {
         this.subSocket.subscribe(statusTopic)
         this.log.info(`service subscriber connect to port ${statusPort} on topic:${statusTopic}.`)
         this.log.info(`Waiting on algo server...(it should take less than ${initialTimeOut} mins)`)
+        console.log("")
+        console.log("Type 'help' for help and 'exit' to exit")
+        console.log("")
         this.subSocket.on("message", (topic, message, algoServerStatus) => {
             this.receive(message.toString().trim(), algoServerStatus.toString() == "true")
         })
@@ -105,8 +108,6 @@ export class MainCLI {
     receive(message: string, algoServerStatus: boolean): void {
         if (!this.algoServerStatus && algoServerStatus && message.length == 0) {
             // receivce heartbeat and the readInput has not been started
-            console.log("Algo Execution Service: ready for user input")
-            console.log("Type 'help' for help and 'exit' to exit")
             this.readInput()
         }
         this.algoServerStatus = algoServerStatus
