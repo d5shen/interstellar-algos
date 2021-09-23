@@ -43,7 +43,9 @@ Edit the basic trading parameters in `configs.json`:
             "PERPFI_LEVERAGE": 10,
             "MAX_SLIPPAGE_RATIO": 0.0050
         },
-        ...
+        "...": {
+            "..."
+        }
     }
 }
 ```
