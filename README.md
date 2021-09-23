@@ -99,7 +99,7 @@ The TWAP Algo executes user's order based on a fixed time period sliced into mul
 To input a TWAP order in the CLI, the command pattern is:
 
 ```bash
-INPUT> TWAP [Pair Name] [BUY|SELL] [USDC Amount] [Total Time (mins)] [Interval (mins)]
+INPUT> Time-Weighted Average Price (TWAP) [Pair Name] [BUY|SELL] [USDC Amount] [Total Time (mins)] [Interval (mins)]
 ```
 
 For example:
@@ -111,12 +111,12 @@ This will buy 5000 USDC worth of SUSHI-USDC perp over 120 minutes, executing a s
 
 ### POV
 
-The POV Algo executes user's order based on a percentage of the pair's total volume traded a fixed time period on Perpetual Protocol
+The Percentage-of-Volume (POV) Algo executes user's order based on a percentage of the pair's total volume traded a fixed time period on Perpetual Protocol
 
 To input a POV order in the CLI, the command pattern is:
 
 ```bash
-INPUT> POV [Pair Name] [BUY|SELL] [USDC Amount] [POV (in decimal)] [Interval (mins)] [Max Clip Size (optional)]
+INPUT> POV [Pair Name] [BUY|SELL] [USDC Amount] [POV (decimal)] [Interval (mins)] [Max Clip Size (optional)]
 ```
 
 For example:
