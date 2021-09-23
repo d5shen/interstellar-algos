@@ -94,12 +94,12 @@ $ env $(cat .env.production | grep -v '#') npx ts-node --files src/ui/main.ts
 
 ### TWAP
 
-The TWAP Algo executes user's order based on a fixed time period sliced into multiple intervals.
+The Time-Weighted Average Price (TWAP) Algo executes user's order based on a fixed time period sliced into multiple intervals.
 
 To input a TWAP order in the CLI, the command pattern is:
 
 ```bash
-INPUT> Time-Weighted Average Price (TWAP) [Pair Name] [BUY|SELL] [USDC Amount] [Total Time (mins)] [Interval (mins)]
+INPUT> TWAP [Pair Name] [BUY|SELL] [USDC Amount] [Total Time (mins)] [Interval (mins)]
 ```
 
 For example:
