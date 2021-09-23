@@ -56,11 +56,13 @@ Edit the basic trading parameters in `configs.json`:
 - Deposit xUSDC for trading on [Perpetual Protocol Exchange](https://perp.exchange/) - xUSDC can be deposited into your wallet either via perp.exchange, or using the xDai [Omni Bridge](https://omni.xdaichain.com/). xUSDC is the USDC token that has been transfered to xDai.
 - Deposit [xDAI](https://www.xdaichain.com/for-users/get-xdai-tokens) in your wallet to pay for gas on xDai (note xDai gas fees are typically 1 Gwei and paid in xDAI, DAI tokens that have been transfered to xDai.)
 
-## Run
+## Running the Algo Execution Bot 
 
 You can run `interstellar-algos` in *nix bash or Windows Powershell.
 
 You will need two consoles - one for the server and one for the Command Line Interface (CLI).
+
+## Run in bash
 
 ### Server in bash (locally)
 ```bash
@@ -71,14 +73,16 @@ or
 $ env $(cat .env.production | grep -v '#') npx ts-node --files src/index.ts
 ```
 
-### Server in Windows Powershell (locally)
-```bash
-$ ./run.ps1
-```
-
 ### Command Line Interface (CLI) in bash
 ```bash
 $ npm run cli
+```
+
+## Run in Windows
+
+### Server in Windows Powershell (locally)
+```bash
+$ ./run.ps1
 ```
 
 ### Command Line Interface (CLI) in Windows Powershell
