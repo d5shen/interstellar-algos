@@ -7,8 +7,7 @@ import { Order, OrderStatus } from "./Order"
 import { Side } from "../Constants"
 import Big from "big.js"
 
-
-/**  
+/**
  **  OrderManager responsible for managing each pair's parent orders algo executions
  **/
 export class OrderManager {
@@ -17,7 +16,7 @@ export class OrderManager {
     private readonly parentOrders = new Array<Order>()
 
     constructor(readonly algoExecutor: AlgoExecutor, readonly pair: string) {}
-    
+
     async checkOrders(ammProps: AmmProperties): Promise<any> {
         this.log.jinfo({
             event: this.pair + ":ParentOrders",
@@ -50,7 +49,7 @@ export class OrderManager {
         return o
     }
 
-    public retriveOrders(status?: OrderStatus): Array<Order> {
+    public retrieveOrders(status?: OrderStatus): Array<Order> {
         if (status) {
             return this.parentOrders.filter((order) => order.status == status)
         } else {

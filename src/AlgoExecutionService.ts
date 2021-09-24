@@ -169,10 +169,10 @@ export class AlgoExecutionService {
         this.publishRetriveOrders(orderResult)
     }
 
-    private retriveOrders(status?: OrderStatus) {
+    private retrieveOrders(status?: OrderStatus) {
         let orderResult = new Array<Order>()
         this.orderManagers.forEach((manager) => {
-            const orders = manager.retriveOrders(status)
+            const orders = manager.retrieveOrders(status)
             orderResult.push(...orders)
         })
         this.publishRetriveOrders(orderResult)
@@ -322,13 +322,13 @@ export class AlgoExecutionService {
 
     private async interpret(msg: string) {
         if (msg.toLowerCase() == "all orders") {
-            this.retriveOrders()
+            this.retrieveOrders()
         } else if (msg.toLowerCase() == "completed orders") {
-            this.retriveOrders(OrderStatus.COMPLETED)
+            this.retrieveOrders(OrderStatus.COMPLETED)
         } else if (msg.toLowerCase() == "in progress orders") {
-            this.retriveOrders(OrderStatus.IN_PROGRESS)
+            this.retrieveOrders(OrderStatus.IN_PROGRESS)
         } else if (msg.toLowerCase() == "cancelled orders") {
-            this.retriveOrders(OrderStatus.CANCELED)
+            this.retrieveOrders(OrderStatus.CANCELED)
         } else if (msg.startsWith("cancel ")) {
             const cancelId = msg.split(" ")
             for (let i = 1; i < cancelId.length; i++) {
