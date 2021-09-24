@@ -2,7 +2,7 @@ import * as PerpUtils from "../eth/perp/PerpUtils"
 import { Algo, AlgoStatus } from "../algo/Algo"
 import { AlgoType } from "../algo/AlgoFactory"
 import { AmmProperties } from "../AlgoExecutionService"
-import { BIG_ZERO, CHILD_ORDER_TABLE_HEADER, Side } from "../Constants"
+import { BIG_ZERO, CHILD_ORDER_TABLE_HEADER, PARENT_ORDER_TABLE_HEADER, Side } from "../Constants"
 import { Log } from "../Log"
 import Big from "big.js"
 import { StatusPublisher } from "../ui/StatusPublisher"
@@ -70,7 +70,7 @@ export class Order {
 
         if (this.algo.status == AlgoStatus.COMPLETED) {
             this._status = OrderStatus.COMPLETED
-            this.publisher.publish("Completed " + CHILD_ORDER_TABLE_HEADER + "\n" + this.toString(), true)
+            this.publisher.publish("Completed " + PARENT_ORDER_TABLE_HEADER + "\n" + this.toString(), true)
         } else if (this.algo.status == AlgoStatus.FAILED || this.algo.status == AlgoStatus.CANCELED) {
             this._status = OrderStatus.CANCELED
         }
