@@ -14,7 +14,7 @@ export enum OrderStatus {
     COMPLETED,
 }
 
-/**  
+/**
  **  Class to represent a new parent order for algo execution
  **   manages its child orders and associated with a single algo type
  **/
@@ -26,14 +26,14 @@ export class Order {
     private _childOrders = new Map<string, TradeRecord>() // child order id -> TradeRecord
     private childOrderInFlight: boolean = false
     private algo: Algo
-    private createTime: string
+    private _createTime: number
     private publisher = StatusPublisher.getInstance()
 
     constructor(readonly pair: string, readonly direction: Side, readonly notional: Big, algo: Algo) {
         this._id = this.pair + "." + Side[this.direction] + "." + AlgoType[algo.type] + "." + Order.counter++
         this.algo = algo
         this._status = OrderStatus.IN_PROGRESS
-        this.createTime = new Date().toLocaleString()
+        this._createTime = Date.now()
     }
 
     // called by the OrderManager when it's loop time to check on this parent order
@@ -70,6 +70,7 @@ export class Order {
 
         if (this.algo.status == AlgoStatus.COMPLETED) {
             this._status = OrderStatus.COMPLETED
+            this.publisher.publish("Completed " + CHILD_ORDER_TABLE_HEADER + "\n" + this.toString(), true)
         } else if (this.algo.status == AlgoStatus.FAILED || this.algo.status == AlgoStatus.CANCELED) {
             this._status = OrderStatus.CANCELED
         }
@@ -94,6 +95,10 @@ export class Order {
         return this._childOrders
     }
 
+    get createTime(): number {
+        return this._createTime
+    }
+
     private buildTradeRecord(tradeId: string): TradeRecord {
         return new TradeRecord({
             tradeId: tradeId,
@@ -104,11 +109,11 @@ export class Order {
     }
 
     toString(): string {
-        return `${this.id.padEnd(23)}|${this.createTime.padEnd(23)}|${this.algo.toString()}|${OrderStatus[this._status].toString().padEnd(15)}|`
+        return `${this.id.padEnd(23)}|${new Date(this._createTime).toLocaleString().padEnd(23)}|${this.algo.toString()}|${OrderStatus[this._status].toString().padEnd(15)}|`
     }
 }
 
-/**  
+/**
  **  Basic trade record to represent submitted child orders transactions
  **/
 export class TradeRecord {

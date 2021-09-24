@@ -17,7 +17,7 @@ import { GasService, NonceService } from "./amm/AmmUtils"
 import { Log } from "./Log"
 import { MaxUint256 } from "@ethersproject/constants"
 import { OrderManager } from "./order/OrderManager"
-import { OrderStatus } from "./order/Order"
+import { Order, OrderStatus } from "./order/Order"
 import { PerpService } from "./eth/perp/PerpService"
 import { PerpPositionService } from "./eth/perp/PerpPositionService"
 import { ServerProfile } from "./eth/ServerProfile"
@@ -27,8 +27,7 @@ import { StatusPublisher } from "./ui/StatusPublisher"
 import { Wallet } from "ethers"
 import Big from "big.js"
 
-
-/**  
+/**
  **  Container to hold real-time data about the AMM pair
  **/
 export class AmmProperties {
@@ -47,7 +46,7 @@ export class AmmProperties {
     }
 }
 
-/**  
+/**
  **  Main server (perptually running) class that processes user inputs and algo orders
  **  User needs to configure their own xDai node for trading and getting blockchain data
  **/
@@ -162,24 +161,28 @@ export class AlgoExecutionService {
     }
 
     private findOrders(conditions: string[]) {
-        let orderString = ""
+        let orderResult = new Array<Order>()
         this.orderManagers.forEach((manager) => {
             const orders = manager.findOrders(conditions)
-            orders.forEach((o) => {
-                orderString = orderString + "\n" + o.toString()
-            })
+            orderResult.push(...orders)
         })
-        this.statusPublisher.publish(orderString.length > 0 ? PARENT_ORDER_TABLE_HEADER + orderString : "Parent Order:\n" + orderString, true)
+        this.publishRetriveOrders(orderResult)
     }
 
     private retriveOrders(status?: OrderStatus) {
-        let orderString = ""
-
+        let orderResult = new Array<Order>()
         this.orderManagers.forEach((manager) => {
             const orders = manager.retriveOrders(status)
-            orders.forEach((o) => {
-                orderString = orderString + "\n" + o.toString()
-            })
+            orderResult.push(...orders)
+        })
+        this.publishRetriveOrders(orderResult)
+    }
+
+    private publishRetriveOrders(orders: Array<Order>): void {
+        orders.sort((a, b) => a.createTime - b.createTime)
+        let orderString = ""
+        orders.forEach((o) => {
+            orderString = orderString + "\n" + o.toString()
         })
         this.statusPublisher.publish(orderString.length > 0 ? PARENT_ORDER_TABLE_HEADER + orderString : "Parent Order:\n" + orderString, true)
     }

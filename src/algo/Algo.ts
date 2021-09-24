@@ -8,6 +8,7 @@ import { Log } from "../Log"
 import { Queue } from "../DataStructure"
 import { TradeRecord } from "../order/Order"
 import Big from "big.js"
+import { StatusPublisher } from "../ui/StatusPublisher"
 
 export enum AlgoStatus {
     INITIALIZED,
@@ -17,7 +18,7 @@ export enum AlgoStatus {
     CANCELED,
 }
 
-/**  
+/**
  **  All algo implementations must inherit from the Algo class which handles
  **   generic execution style, and housekeeping like completion and cancellation
  **/
