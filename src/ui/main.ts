@@ -72,7 +72,7 @@ export class MainCLI {
             console.log("TWAP Algo Settings:   [TOTAL TIME (minutes)] [TIME BETWEEN TRADES (minutes)] ")
             console.log("TWAP example:    INPUT> TWAP SUSHI-USDC BUY 1000 60 6")
             console.log(" ")
-            console.log("POV Algo Settings:    [POV (devimal)] [TIME BETWEEN TRADES (minutes)] [MAX CLIP SIZE (optional)]")
+            console.log("POV Algo Settings:    [POV (decimal)] [TIME BETWEEN TRADES (minutes)] [MAX CLIP SIZE (optional)]")
             console.log("POV example:     INPUT> POV SUSHI-USDC SELL 1000 0.05 5")
             console.log(" ")
             console.log("Check Order status command:    ")
