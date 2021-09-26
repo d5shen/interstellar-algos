@@ -327,7 +327,7 @@ export class AlgoExecutionService {
             this.retrieveOrders(OrderStatus.COMPLETED)
         } else if (msg.toLowerCase() == "in progress orders") {
             this.retrieveOrders(OrderStatus.IN_PROGRESS)
-        } else if (msg.toLowerCase() == "cancelled orders") {
+        } else if (msg.toLowerCase() == "canceled orders") {
             this.retrieveOrders(OrderStatus.CANCELED)
         } else if (msg.startsWith("cancel ")) {
             const cancelId = msg.split(" ")

@@ -4,8 +4,8 @@ import { Socket, socket } from "zeromq"
 import { statusPort, statusTopic, tcp, userInputPort, userInputTopic, initialTimeOut } from "../configs"
 import { Log } from "../Log"
 
-/**  
- **  Main Command Line Interface class - user will need to run this script to 
+/**
+ **  Main Command Line Interface class - user will need to run this script to
  **   interact with the algo execution server
  **/
 export class MainCLI {
@@ -79,7 +79,7 @@ export class MainCLI {
             console.log("    all orders")
             console.log("    in progress orders")
             console.log("    completed orders")
-            console.log("    cancelled orders")
+            console.log("    canceled orders")
             console.log(" ")
             console.log("Find orders by order id:       ")
             console.log("    find <condition1> <condition2> ...")
